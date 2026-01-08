@@ -1,6 +1,6 @@
 # FaithConnect
 
-![FaithConnect Home](./assets/design/home.jpeg)
+<img src="./assets/design/home.jpeg" alt="FaithConnect Home" width="300">
 
 ## Overview
 
