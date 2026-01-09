@@ -1,42 +1,51 @@
-import { ScrollView, Text, View, Pressable } from 'react-native'
+import { ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { useState } from 'react'
 import { TopBar } from '../../components/Headers/TopBar'
+import { MessageSearchBar } from '../../components/Messages/MessageSearchBar'
+import { MessageThreadCard } from '../../components/Messages/MessageThreadCard'
+import { MessageEmptyState } from '../../components/Messages/MessageEmptyState'
 import { useChatStore } from '../../stores/chatStore'
 
 export default function MessagesScreen() {
   const router = useRouter()
   const { threads } = useChatStore()
+  const [search, setSearch] = useState('')
+
+  const filteredThreads = threads.filter(
+    (t) =>
+      t.peerName.toLowerCase().includes(search.toLowerCase()) ||
+      t.lastMessage.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-        <TopBar title="Messages" subtitle="Chats with leaders" />
-        {threads.map((t) => (
-          <Pressable
-            key={t.id}
-            onPress={() => router.push(`/messages/${t.id}`)}
-            className="mb-3 rounded-2xl border border-gray-200 bg-white p-4"
-          >
-            <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-base font-semibold text-gray-900">{t.peerName}</Text>
-                <Text className="mt-1 text-sm text-gray-600">{t.lastMessage}</Text>
-              </View>
-              {t.unread > 0 ? (
-                <View className="rounded-full bg-blue-500 px-2 py-1">
-                  <Text className="text-xs font-semibold text-white">{t.unread}</Text>
-                </View>
-              ) : null}
-            </View>
-          </Pressable>
-        ))}
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }}>
+        {/* Header */}
+        <View className="px-4 pt-2">
+          <TopBar title="Messages" />
+          <MessageSearchBar value={search} onChange={setSearch} />
+        </View>
 
-        {threads.length === 0 ? (
-          <View className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <Text className="text-sm text-gray-600">No conversations yet. Start by following a leader.</Text>
-          </View>
-        ) : null}
+        {/* Threads List */}
+        <View className="px-4">
+          {filteredThreads.map((t) => (
+            <MessageThreadCard
+              key={t.id}
+              id={t.id}
+              peerName={t.peerName}
+              lastMessage={t.lastMessage}
+              avatar={t.avatar}
+              isActive={t.isActive}
+              unread={t.unread}
+              timestamp={t.timestamp}
+              onPress={() => router.push(`/messages/${t.id}`)}
+            />
+          ))}
+
+          {filteredThreads.length === 0 && <MessageEmptyState hasSearch={search.length > 0} />}
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
