@@ -21,8 +21,7 @@ export const TopBar = ({ title, subtitle, right, onBack }: Props) => (
         </Pressable>
       ) : null}
       <View>
-        <Text className="text-2xl font-extrabold text-[#111111]">{title}</Text>
-        {subtitle ? <Text className="text-xs text-gray-500">{subtitle}</Text> : null}
+        <Text className="text-2xl font-bold text-[#111111]">{title}</Text>
       </View>
     </View>
     {right}
