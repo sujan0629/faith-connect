@@ -16,6 +16,9 @@ type Thread = {
   peerName: string
   lastMessage: string
   unread: number
+  avatar?: string
+  isActive: boolean
+  timestamp: Date
 }
 
 type ChatState = {
@@ -32,6 +35,9 @@ const seedThreads: Thread[] = [
     peerName: 'Pastor Grace',
     lastMessage: 'Thank you for the guidance.',
     unread: 1,
+    avatar: 'https://plus.unsplash.com/premium_photo-1689530775582-83b8abdb5020?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cmFuZG9tJTIwcGVyc29ufGVufDB8fDB8fHww',
+    isActive: false,
+    timestamp: new Date(),
   },
   {
     id: 't2',
@@ -39,6 +45,9 @@ const seedThreads: Thread[] = [
     peerName: 'Imam Kareem',
     lastMessage: 'When is the next session?',
     unread: 0,
+    avatar: 'https://miro.medium.com/v2/resize:fit:1400/1*zurzWYgv6-4L123HBwzsKA.jpeg',
+    isActive: false,
+    timestamp: new Date(),
   },
 ]
 
@@ -85,7 +94,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         createdAt: new Date().toISOString(),
       }
       const existing = state.messages[threadId] || []
-      const updatedMessages = { ...state.messages, [threadId]: [...existing, message] }
+      // Add new message at the beginning since FlatList is inverted
+      const updatedMessages = { ...state.messages, [threadId]: [message, ...existing] }
       const updatedThreads = state.threads.map((t) =>
         t.id === threadId ? { ...t, lastMessage: payload.content, unread: 0 } : t,
       )

@@ -24,6 +24,7 @@ const seedLeaders = (): Leader[] => [
     name: 'Pastor Grace',
     faith: 'Christianity',
     bio: 'Guiding with compassion and clarity.',
+    avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cGFzdG9yfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60',
   },
   {
     id: 'l2',
