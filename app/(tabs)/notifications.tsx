@@ -1,36 +1,114 @@
-import { ScrollView, Text, View, Pressable } from 'react-native'
+import { ScrollView, View, Toast } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useState, useMemo } from 'react'
 import { TopBar } from '../../components/Headers/TopBar'
-import { useNotificationStore } from '../../stores/notificationStore'
+import { useNotificationStore, Notification } from '../../stores/notificationStore'
+import { NotificationMentionCard } from '../../components/Notifications/NotificationMentionCard'
+import { NotificationLikeCard } from '../../components/Notifications/NotificationLikeCard'
+import { NotificationTabs } from '../../components/Notifications/NotificationTabs'
+import { NotificationEmptyState } from '../../components/Notifications/NotificationEmptyState'
+
+type TabType = 'all' | 'mentions' | 'comments'
 
 export default function NotificationsScreen() {
   const { items, markRead } = useNotificationStore()
+  const [activeTab, setActiveTab] = useState<TabType>('all')
+
+  const formatTimeAgo = (date: string) => {
+    const now = new Date()
+    const notifDate = new Date(date)
+    const diffMs = now.getTime() - notifDate.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return notifDate.toLocaleDateString()
+  }
+
+  const filteredNotifications = useMemo(() => {
+    if (activeTab === 'all') return items
+    if (activeTab === 'mentions') return items.filter((n) => n.type === 'mention')
+    if (activeTab === 'comments') return items.filter((n) => n.type === 'comment' || n.type === 'like')
+    return items
+  }, [items, activeTab])
+
+  const handleReply = (id: string) => {
+    // TODO: Implement reply logic
+    console.log('Reply to notification:', id)
+  }
+
+  const handleRepost = (id: string) => {
+    // TODO: Implement repost logic
+    console.log('Repost notification:', id)
+  }
+
+  const handleSave = (id: string) => {
+    // TODO: Implement save logic
+    console.log('Save notification:', id)
+  }
+
+  const handleShare = (id: string) => {
+    // TODO: Implement share logic
+    console.log('Share notification:', id)
+  }
+
+  const handleMenu = (id: string) => {
+    // TODO: Implement menu options (delete, mute, etc.)
+    console.log('Menu for notification:', id)
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-        <TopBar title="Notifications" subtitle="Activity from leaders" />
-        {items.map((n) => (
-          <Pressable
-            key={n.id}
-            onPress={() => markRead(n.id)}
-            className={`mb-3 rounded-2xl border bg-white p-4 ${
-              n.unread ? 'border-blue-300' : 'border-gray-200'
-            }`}
-          >
-            <Text className="text-base font-semibold text-gray-900">{n.title}</Text>
-            <Text className="mt-1 text-sm text-gray-600">{n.body}</Text>
-            <Text className="mt-2 text-[11px] uppercase tracking-wide text-gray-400">
-              {new Date(n.createdAt).toLocaleDateString()}
-            </Text>
-          </Pressable>
-        ))}
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }}>
+        <View className="px-4 py-4">
+          <TopBar title="Notifications" subtitle="Activity from leaders" />
+        </View>
 
-        {items.length === 0 ? (
-          <View className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4">
-            <Text className="text-sm text-gray-600">No notifications yet.</Text>
+        <NotificationTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {filteredNotifications.length === 0 ? (
+          <View className="px-4">
+            <NotificationEmptyState tab={activeTab} />
           </View>
-        ) : null}
+        ) : (
+          filteredNotifications.map((notification) => (
+            <View key={notification.id}>
+              {notification.type === 'like' ? (
+                <NotificationLikeCard
+                  id={notification.id}
+                  authorId={notification.authorId}
+                  authorName={notification.authorName}
+                  authorAvatar={notification.authorAvatar}
+                  isVerified={notification.isVerified}
+                  actionType={notification.actionType}
+                  timestamp={formatTimeAgo(notification.createdAt)}
+                  onPress={() => markRead(notification.id)}
+                />
+              ) : (
+                <NotificationMentionCard
+                  id={notification.id}
+                  authorId={notification.authorId}
+                  authorName={notification.authorName}
+                  authorAvatar={notification.authorAvatar}
+                  isVerified={notification.isVerified}
+                  faith={notification.faith}
+                  comment={notification.comment}
+                  replyingTo={notification.replyingTo}
+                  timestamp={formatTimeAgo(notification.createdAt)}
+                  onReply={handleReply}
+                  onRepost={handleRepost}
+                  onSave={handleSave}
+                  onShare={handleShare}
+                  onMenu={handleMenu}
+                />
+              )}
+            </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   )
