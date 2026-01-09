@@ -22,7 +22,7 @@ FaithConnect is a mobile-first social platform designed to connect worshipers wi
 - **Routing**: Expo Router (file-based routing)
 - **Styling**: NativeWind 4.1.23 (Tailwind CSS for React Native)
 - **State Management**: Zustand 5.0.6
-- **Video**: expo-av for native video playback
+- **Video**: expo-video for native video playback
 - **Fonts**: Roboto (custom font family)
 - **UI Design**: iOS-style light theme
 
