@@ -17,6 +17,7 @@ const LeaderSearchBar: React.FC<LeaderSearchBarProps> = ({ value, onChange }) =>
       onChangeText={onChange}
       autoCapitalize="none"
       autoCorrect={false}
+      placeholderTextColor="#9CA3AF"
     />
   </View>
 );
