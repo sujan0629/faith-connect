@@ -1,58 +1,185 @@
-import type { ComponentProps, ComponentType } from 'react'
-import type { TextStyle, ViewStyle } from 'react-native'
-import { Text, View } from 'react-native'
-import { BaseToast, ErrorToast } from 'react-native-toast-message'
+import { Text, View, Image, StyleSheet } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import { BlurView } from 'expo-blur'
+import appIcon from '../assets/images/icon.png'
 import type { BaseToastProps, ToastConfig } from 'react-native-toast-message'
-
-const ViewWithClassName = View as unknown as ComponentType<
-	ComponentProps<typeof View> & { className?: string }
->
-const TextWithClassName = Text as unknown as ComponentType<
-	ComponentProps<typeof Text> & { className?: string }
->
-
-const baseToastStyle: ViewStyle = {
-	borderLeftWidth: 6,
-	borderRadius: 12,
-	paddingVertical: 12,
-	paddingHorizontal: 12,
-	backgroundColor: '#0B1220',
-}
-
-const text1Style: TextStyle = { fontSize: 15, fontWeight: '600', color: '#F6F8FF' }
-const text2Style: TextStyle = { fontSize: 13, color: '#CBD4E6' }
 
 export const toastConfig: ToastConfig = {
 	success: (props: BaseToastProps) => (
-		<BaseToast
-			{...props}
-			style={[baseToastStyle, { borderLeftColor: '#38bdf8' }]}
-			contentContainerStyle={{ paddingHorizontal: 8 }}
-			text1Style={text1Style}
-			text2Style={text2Style}
-		/>
-	),
+			<View style={styles.toastContainer}>
+				<BlurView intensity={80} tint="light" style={styles.blurView}>
+					<View style={styles.contentWrapper}>
+						<View style={styles.mainRow}>
+							{/* Left Icon - Checkmark for success */}
+							<Ionicons name="checkmark-circle" size={26} color="#222" style={styles.rightIcon} />
+							{/* Text Content */}
+							<View style={styles.textContainer}>
+								<Text style={styles.titleText} numberOfLines={2}>
+									{props.text1}
+								</Text>
+								{props.text2 && (
+									<Text style={styles.subtitleText} numberOfLines={1}>
+										{props.text2}
+									</Text>
+								)}
+							</View>
+						</View>
+						{/* Bottom Progress Bar */}
+						<View style={styles.progressBarWrapper}>
+							<View style={styles.progressBar} />
+						</View>
+					</View>
+				</BlurView>
+			</View>
+		),
 	info: (props: BaseToastProps) => (
-		<BaseToast
-			{...props}
-			style={[baseToastStyle, { borderLeftColor: '#a855f7' }]}
-			contentContainerStyle={{ paddingHorizontal: 8 }}
-			text1Style={text1Style}
-			text2Style={text2Style}
-		/>
-	),
+			<View style={styles.toastContainer}>
+				<BlurView intensity={80} tint="light" style={styles.blurView}>
+					<View style={styles.contentWrapper}>
+						<View style={styles.mainRow}>
+							{/* Left Icon - Info icon */}
+							<Ionicons name="information-circle-outline" size={28} color="#222" style={styles.rightIcon} />
+							{/* Text Content */}
+							<View style={styles.textContainer}>
+								<Text style={styles.titleText} numberOfLines={2}>
+									{props.text1}
+								</Text>
+								{props.text2 && (
+									<Text style={styles.subtitleText} numberOfLines={1}>
+										{props.text2}
+									</Text>
+								)}
+							</View>
+						</View>
+						{/* Bottom Progress Bar */}
+						<View style={styles.progressBarWrapper}>
+							<View style={styles.progressBar} />
+						</View>
+					</View>
+				</BlurView>
+			</View>
+		),
 	error: (props: BaseToastProps) => (
-		<ErrorToast
-			{...props}
-			style={[baseToastStyle, { borderLeftColor: '#ef4444' }]}
-			contentContainerStyle={{ paddingHorizontal: 8 }}
-			text1Style={{ ...text1Style, color: '#FFECEC' }}
-			text2Style={{ ...text2Style, color: '#FCA5A5' }}
-		/>
-	),
+			<View style={styles.toastContainer}>
+				<BlurView intensity={80} tint="light" style={styles.blurView}>
+					<View style={styles.contentWrapper}>
+						<View style={styles.mainRow}>
+							{/* Left Icon - Close/X icon for error */}
+							<Ionicons name="close-circle-outline" size={28} color="#8B0000" style={styles.rightIcon} />
+							{/* Text Content */}
+							<View style={styles.textContainer}>
+								<Text style={styles.titleText} numberOfLines={2}>
+									{props.text1}
+								</Text>
+								{props.text2 && (
+									<Text style={styles.subtitleText} numberOfLines={1}>
+										{props.text2}
+									</Text>
+								)}
+							</View>
+						</View>
+						{/* Bottom Progress Bar */}
+						<View style={styles.progressBarWrapper}>
+							<View style={styles.progressBar} />
+						</View>
+					</View>
+				</BlurView>
+			</View>
+		),
 	minimal: ({ text1 }: BaseToastProps) => (
-		<ViewWithClassName className="rounded-xl bg-black/80 px-4 py-3">
-			<TextWithClassName className="text-sm font-semibold text-white">{text1}</TextWithClassName>
-		</ViewWithClassName>
-	),
+			<View style={styles.toastContainer}>
+				<BlurView intensity={80} tint="light" style={styles.blurView}>
+					<View style={styles.contentWrapper}>
+						<View style={styles.mainRow}>
+							{/* Left Icon - Smiley for minimal */}
+							<Ionicons name="happy-outline" size={28} color="#6b7280" style={styles.rightIcon} />
+							{/* Text Content */}
+							<View style={styles.textContainer}>
+								<Text style={styles.titleText} numberOfLines={2}>
+									{text1}
+								</Text>
+							</View>
+						</View>
+						{/* Bottom Progress Bar */}
+						<View style={styles.progressBarWrapper}>
+							<View style={styles.progressBar} />
+						</View>
+					</View>
+				</BlurView>
+			</View>
+		),
 }
+
+const styles = StyleSheet.create({
+	toastContainer: {
+		width: '100%',
+		paddingHorizontal: 16,
+		marginBottom: 8,
+		marginTop: 15,
+	},
+	blurView: {
+		borderRadius: 20,
+		overflow: 'hidden',
+	},
+	contentWrapper: {
+		backgroundColor: 'rgba(255, 255, 255, 0.85)',
+		paddingHorizontal: 12,
+		paddingVertical: 10,
+	},
+	   mainRow: {
+		   flexDirection: 'row',
+		   alignItems: 'center',
+		   gap: 4,
+	   },
+	iconCircle: {
+		width: 42,
+		height: 42,
+		borderRadius: 21,
+		backgroundColor: '#ffffff',
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginRight: 10,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.05,
+		shadowRadius: 4,
+		elevation: 2,
+	},
+	appIcon: {
+		width: 28,
+		height: 28,
+		borderRadius: 14,
+	},
+	textContainer: {
+		flex: 1,
+		marginRight: 10,
+	},
+	titleText: {
+		fontSize: 14,
+		fontWeight: '600',
+		color: '#000000',
+		lineHeight: 18,
+		marginTop: 4,
+	},
+	subtitleText: {
+		fontSize: 12,
+		color: '#6b7280',
+		marginTop: 1,
+		lineHeight: 16,
+	},
+	   rightIcon: {
+		   marginLeft: 2,
+		   marginRight: 8,
+		   marginBottom: 6,
+	   },
+	progressBarWrapper: {
+		alignItems: 'center',
+		marginTop: 10,
+	},
+	progressBar: {
+		width: 50,
+		height: 3,
+		backgroundColor: '#e5e7eb',
+		borderRadius: 2,
+	},
+})
