@@ -2,7 +2,7 @@ import { View, Text } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 
 interface NotificationEmptyStateProps {
-  tab: 'all' | 'mentions' | 'comments'
+  tab: 'all' | 'mentions'
 }
 
 export const NotificationEmptyState = ({ tab }: NotificationEmptyStateProps) => {
@@ -10,8 +10,6 @@ export const NotificationEmptyState = ({ tab }: NotificationEmptyStateProps) => 
     switch (tab) {
       case 'mentions':
         return 'No mentions yet'
-      case 'comments':
-        return 'No comment notifications yet'
       default:
         return 'No notifications yet'
     }
