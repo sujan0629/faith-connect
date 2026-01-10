@@ -1,29 +1,33 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { View, Text, ScrollView, Pressable, TextInput, NativeScrollEvent, NativeSyntheticEvent, Animated, Dimensions } from 'react-native'
+import { View, Text, ScrollView, Pressable, NativeScrollEvent, NativeSyntheticEvent, Animated, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
+import { useRouter, useLocalSearchParams } from 'expo-router'
+import { Ionicons, Octicons } from '@expo/vector-icons'
 import { PostCard } from '../../components/Feed/PostCard'
 import { ReelCard } from '../../components/Reel/ReelCard'
 import { HomeHeader } from '../../components/Headers/HomeHeader'
-import { SolidButton } from '../../components/Buttons/SolidButton'
+import { CreatePostModal } from '../../components/Feed/CreatePostModal'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeedStore } from '../../stores/feedStore'
 import { useFocusEffect } from 'expo-router'
+import { toastConfig } from '../../components/ToastConfig'
 
 const segments = ['Explore', 'Following'] as const
 
 type Segment = (typeof segments)[number]
 
 export default function HomeScreen() {
+  const router = useRouter()
+  const params = useLocalSearchParams()
   const [segment, setSegment] = useState<Segment>('Explore')
-  const { explore, following, toggleLike, toggleSave, addPost } = useFeedStore()
+  const { explore, following, toggleLike, toggleSave } = useFeedStore()
   const user = useAuthStore((s) => s.user)
   const role = user?.role || 'worshiper'
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false)
 
   const data = useMemo(() => (segment === 'Explore' ? explore : following), [segment, explore, following])
 
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
   const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const [isAtTop, setIsAtTop] = useState(true)
   const [visibleReelId, setVisibleReelId] = useState<string | null>(null)
@@ -58,6 +62,12 @@ export default function HomeScreen() {
       })
     ]).start()
   }, [isHeaderVisible])
+
+  useEffect(() => {
+    if (params.from === 'onboarding') {
+      Toast.show({ type: 'success', text1: 'Profile updated', text2: 'Welcome to FaithConnect!' })
+    }
+  }, [params.from])
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentScrollY = event.nativeEvent.contentOffset.y
@@ -128,22 +138,15 @@ export default function HomeScreen() {
     }))
   }
 
+  const handlePost = (content: string, media?: string | null) => {
+    Toast.show({ type: 'success', text1: 'Post published!' })
+    setShowCreatePostModal(false)
+  }
+
   const handlePublish = () => {
-    if (!title || !body) {
-      Toast.show({ type: 'error', text1: 'Add a title and message.' })
-      return
+    if (role === 'leader') {
+      router.push('/(tabs)/create')
     }
-    addPost({
-      authorId: user?.id || 'me',
-      authorName: user?.name || 'You',
-      faith: user?.faith,
-      title,
-      body,
-      type: 'post',
-    })
-    setTitle('')
-    setBody('')
-    Toast.show({ type: 'success', text1: 'Published to feed' })
   }
 
   return (
@@ -164,31 +167,24 @@ export default function HomeScreen() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
+          {role === 'leader' ? (
+           <View className="mx-4 mb-6 mt-3 rounded-2xl bg-gray-50 p-4">
+  <Text className="text-base font-medium text-gray-900">
+    Post your first update today
+  </Text>
+  <Text className="text-sm text-gray-600 mt-1 mb-3">
+    Share your thoughts by posting your first update
+  </Text>
 
-      {role === 'leader' ? (
-        <View className="mx-4 mb-4 mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-          <Text className="text-base font-semibold text-gray-900">Create a post</Text>
-          <Text className="text-sm text-gray-600">Share guidance with your followers.</Text>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Title"
-            placeholderTextColor="#9CA3AF"
-            className="mt-3 rounded-xl border border-gray-200 bg-white px-3 py-3 text-gray-900"
-          />
-          <TextInput
-            value={body}
-            onChangeText={setBody}
-            placeholder="Message"
-            placeholderTextColor="#9CA3AF"
-            multiline
-            className="mt-2 rounded-xl border border-gray-200 bg-white px-3 py-3 text-gray-900"
-            style={{ minHeight: 80, textAlignVertical: 'top' }}
-          />
-          <SolidButton label="Publish" onPress={handlePublish} style={{ marginTop: 12 }} />
-        </View>
-      ) : null}
-
+  <Pressable
+    onPress={() => setShowCreatePostModal(true)}
+    className="self-start rounded-xl bg-blue-500 px-4 py-2.5 flex-row items-center gap-2"
+  >
+    <Octicons name="sparkle-fill" size={16} color="white" />
+    <Text className="text-sm font-semibold text-white">Create post</Text>
+  </Pressable>
+</View>
+          ) : null}
       {data.map((item) => (
         item.type === 'reel' ? (
           <View key={item.id} onLayout={(e) => handleReelLayout(item.id, e)}>
@@ -206,8 +202,15 @@ export default function HomeScreen() {
           <Text className="text-sm text-gray-600">No posts here yet. Follow leaders to see updates.</Text>
         </View>
       ) : null}
-      </ScrollView>
+        </ScrollView>
       </View>
+
+      <CreatePostModal
+        visible={showCreatePostModal}
+        onClose={() => setShowCreatePostModal(false)}
+        onPost={handlePost}
+      />
+      <Toast config={toastConfig} />
     </SafeAreaView>
   )
 }

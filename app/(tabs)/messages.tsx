@@ -2,29 +2,51 @@ import { ScrollView, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
-import { TopBar } from '../../components/Headers/TopBar'
+import { MessagesHeader } from '../../components/Headers/MessagesHeader'
 import { MessageSearchBar } from '../../components/Messages/MessageSearchBar'
 import { MessageThreadCard } from '../../components/Messages/MessageThreadCard'
 import { MessageEmptyState } from '../../components/Messages/MessageEmptyState'
 import { useChatStore } from '../../stores/chatStore'
+import { FilterState } from '../../components/FilterDropdown'
 
 export default function MessagesScreen() {
   const router = useRouter()
   const { threads } = useChatStore()
   const [search, setSearch] = useState('')
+  const [filters, setFilters] = useState<FilterState>({
+    sortBy: 'Recent',
+    status: 'All',
+  })
 
-  const filteredThreads = threads.filter(
-    (t) =>
-      t.peerName.toLowerCase().includes(search.toLowerCase()) ||
-      t.lastMessage.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredThreads = threads
+    .filter((t) => {
+      if (filters.status === 'Unread') return t.unread
+      if (filters.status === 'Read') return !t.unread
+      return true
+    })
+    .filter(
+      (t) =>
+        t.peerName.toLowerCase().includes(search.toLowerCase()) ||
+        t.lastMessage.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (filters.sortBy === 'Unread First') {
+        if (a.unread && !b.unread) return -1
+        if (!a.unread && b.unread) return 1
+      }
+      if (filters.sortBy === 'Alphabetical') {
+        return a.peerName.localeCompare(b.peerName)
+      }
+      // Default to Recent (assuming threads have timestamps)
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    })
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <MessagesHeader filters={filters} onFiltersChange={setFilters} />
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Header */}
+        {/* Search Bar */}
         <View className="px-4 pt-2">
-          <TopBar title="Messages" />
           <MessageSearchBar value={search} onChange={setSearch} />
         </View>
 

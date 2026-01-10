@@ -1,11 +1,13 @@
 import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent } from 'react-native'
 import { useFeedStore } from '../../stores/feedStore'
-import { VideoView, useVideoPlayer } from 'expo-video'
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
+import { VideoView, useVideoPlayer, VideoPlayer } from 'expo-video'
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { ReelHeader } from '../../components/Reel/ReelHeader'
 import { ReelActions } from '../../components/Reel/ReelActions'
 import { ReelUserInfo } from '../../components/Reel/ReelUserInfo'
+import { CreateReelModal } from '../../components/Feed/CreateReelModal'
+import { Comment } from '../posts/[id]'
 
 const TAB_BAR_HEIGHT = 85
 
@@ -16,19 +18,58 @@ export default function ReelsScreen() {
   const reels = explore.filter((p) => p.type === 'reel')
   const router = useRouter()
   const { reelId } = useLocalSearchParams<{ reelId: string }>()
-  const initialIndex = reelId ? reels.findIndex((r) => r.id === reelId) : 0
   const [isMuted, setIsMuted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [createReelModalVisible, setCreateReelModalVisible] = useState(false)
+
+  const [reelComments, setReelComments] = useState<Record<string, Comment[]>>({
+    'p2': [
+      {
+        id: 'c1',
+        authorId: 'u1',
+        authorName: 'Sarah Johnson',
+        authorAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
+        text: 'Amazing perspective! This really captures the essence of community.',
+        likes: 24,
+        isLiked: false,
+        replies: 0,
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: 'c2',
+        authorId: 'u2',
+        authorName: 'Michael Chen',
+        authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
+        text: 'Beautiful! The lighting in this video is incredible.',
+        likes: 12,
+        isLiked: true,
+        replies: 0,
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+      },
+    ],
+    'p4': [
+      {
+        id: 'c3',
+        authorId: 'u3',
+        authorName: 'Priya Patel',
+        authorAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
+        text: 'This touched my heart. Faith communities like this are so important.',
+        likes: 45,
+        isLiked: false,
+        replies: 0,
+        createdAt: new Date(Date.now() - 1800000).toISOString(),
+      },
+    ],
+  })
+
   const scrollViewRef = useRef<ScrollView>(null)
   const isScreenFocused = useRef(true)
-  const videoPlayers = useRef<Map<string, any>>(new Map())
+  const videoPlayers = useRef<Map<string, VideoPlayer>>(new Map())
   const currentIndexRef = useRef(0)
   const hasInitialized = useRef(false)
   const previousReelIdRef = useRef<string | undefined>(undefined)
 
-  // Set initial index based on reelId - run when reelId changes
   useLayoutEffect(() => {
-    // Only run if reelId is different from the previous one (not on every data change)
     if (reelId && reelId !== previousReelIdRef.current && reels.length > 0) {
       previousReelIdRef.current = reelId
       hasInitialized.current = true
@@ -36,7 +77,6 @@ export default function ReelsScreen() {
       if (index !== -1) {
         setCurrentIndex(index)
         currentIndexRef.current = index
-        // Scroll to initial position immediately
         scrollViewRef.current?.scrollTo({
           y: index * VISIBLE_HEIGHT,
           animated: false,
@@ -45,30 +85,22 @@ export default function ReelsScreen() {
     }
   }, [reelId])
 
-  // Update ref when currentIndex changes
   useEffect(() => {
     currentIndexRef.current = currentIndex
   }, [currentIndex])
 
-  // Handle scroll to change reel
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    // Reset initialization flag when user scrolls
     hasInitialized.current = false
-
     const contentOffsetY = event.nativeEvent.contentOffset.y
     const index = Math.round(contentOffsetY / VISIBLE_HEIGHT)
     
     if (index !== currentIndexRef.current && index >= 0 && index < reels.length) {
-      // Pause previous video
       const prevReel = reels[currentIndexRef.current]
       if (prevReel && videoPlayers.current.has(prevReel.id)) {
         videoPlayers.current.get(prevReel.id)?.pause()
       }
-      
       setCurrentIndex(index)
       currentIndexRef.current = index
-      
-      // Play new video
       const newReel = reels[index]
       if (newReel && videoPlayers.current.has(newReel.id) && isScreenFocused.current) {
         videoPlayers.current.get(newReel.id)?.play()
@@ -76,7 +108,6 @@ export default function ReelsScreen() {
     }
   }, [reels])
 
-  // Handle screen focus
   useFocusEffect(
     useCallback(() => {
       isScreenFocused.current = true
@@ -84,14 +115,44 @@ export default function ReelsScreen() {
       if (currentReel && videoPlayers.current.has(currentReel.id)) {
         videoPlayers.current.get(currentReel.id)?.play()
       }
-      
       return () => {
         isScreenFocused.current = false
-        // Pause all videos
         videoPlayers.current.forEach(player => player.pause())
       }
     }, [currentIndex, reels])
   )
+
+  const onLikeComment = useCallback((commentId: string) => {
+    setReelComments(prev => {
+      const updated = { ...prev }
+      Object.keys(updated).forEach(id => {
+        updated[id] = updated[id].map(comment =>
+          comment.id === commentId
+            ? { ...comment, isLiked: !comment.isLiked, likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1 }
+            : comment
+        )
+      })
+      return updated
+    })
+  }, [])
+
+  const onAddComment = useCallback((reelId: string, text: string) => {
+    const newComment: Comment = {
+      id: `c${Date.now()}`,
+      authorId: 'currentUser',
+      authorName: 'You',
+      authorAvatar: undefined,
+      text,
+      likes: 0,
+      isLiked: false,
+      replies: 0,
+      createdAt: new Date().toISOString(),
+    }
+    setReelComments(prev => ({
+      ...prev,
+      [reelId]: [newComment, ...(prev[reelId] || [])]
+    }))
+  }, [])
 
   if (reels.length === 0) {
     return (
@@ -103,12 +164,13 @@ export default function ReelsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      {/* Fixed Header */}
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
-        <ReelHeader onBack={() => router.back()} onCameraPress={() => {}} />
+        <ReelHeader 
+          onBack={() => router.back()} 
+          onCreateReelPress={() => setCreateReelModalVisible(true)}
+        />
       </View>
 
-      {/* Scrollable Content - no shell, full screen */}
       <ScrollView
         ref={scrollViewRef}
         onMomentumScrollEnd={handleScroll}
@@ -116,59 +178,71 @@ export default function ReelsScreen() {
         showsVerticalScrollIndicator={false}
         decelerationRate="fast"
       >
-          {reels.map((reel, index) => (
-            <ReelItem
-              key={reel.id}
-              reel={reel}
-              index={index}
-              isActive={index === currentIndex}
-              isMuted={isMuted}
-              screenHeight={VISIBLE_HEIGHT}
-              screenWidth={SCREEN_WIDTH}
-              onLikePress={() => toggleLike(reel.id)}
-              onSavePress={() => toggleSave(reel.id)}
-              onPlayerReady={(player) => {
-                videoPlayers.current.set(reel.id, player)
-              }}
-              isScreenFocused={isScreenFocused.current}
-            />
-          ))}
-        </ScrollView>
-      </View>
-    )
-  }
-  
-  // Separate component for each reel item
-  function ReelItem({ 
-    reel,
-    index,
-    isActive, 
-    isMuted, 
-    screenHeight, 
-    screenWidth,
-    onLikePress,
-    onSavePress,
-    onPlayerReady,
-    isScreenFocused
-  }: {
-    reel: any
-    index: number
-    isActive: boolean
-    isMuted: boolean
-    screenHeight: number
-    screenWidth: number
-    onLikePress: () => void
-    onSavePress: () => void
-    onPlayerReady: (player: any) => void
-    isScreenFocused: boolean
-  }) {
+        {reels.map((reel, index) => (
+          <ReelItem
+            key={reel.id}
+            reel={reel}
+            isActive={index === currentIndex}
+            isMuted={isMuted}
+            screenHeight={VISIBLE_HEIGHT}
+            screenWidth={SCREEN_WIDTH}
+            onLikePress={() => toggleLike(reel.id)}
+            onSavePress={() => toggleSave(reel.id)}
+            onPlayerReady={(player: VideoPlayer) => {
+              videoPlayers.current.set(reel.id, player)
+            }}
+            isScreenFocused={isScreenFocused.current}
+            reelComments={reelComments}
+            onLikeComment={onLikeComment}
+            onAddComment={onAddComment}
+          />
+        ))}
+      </ScrollView>
+
+      <CreateReelModal
+        visible={createReelModalVisible}
+        onClose={() => setCreateReelModalVisible(false)}
+        videoUri={null}
+        onPost={() => setCreateReelModalVisible(false)}
+      />
+    </View>
+  )
+}
+
+// MOVED OUTSIDE AND WRAPPED IN MEMO TO STOP RELOADING ON STATE CHANGE
+const ReelItem = React.memo(({ 
+  reel,
+  isActive, 
+  isMuted, 
+  screenHeight, 
+  screenWidth,
+  onLikePress,
+  onSavePress,
+  onPlayerReady,
+  isScreenFocused,
+  reelComments,
+  onLikeComment,
+  onAddComment
+}: {
+  reel: any
+  isActive: boolean
+  isMuted: boolean
+  screenHeight: number
+  screenWidth: number
+  onLikePress: () => void
+  onSavePress: () => void
+  onPlayerReady: (player: VideoPlayer) => void
+  isScreenFocused: boolean
+  reelComments: Record<string, Comment[]>
+  onLikeComment: (commentId: string) => void
+  onAddComment: (reelId: string, text: string) => void
+}) => {
   const player = useVideoPlayer(reel.media || '', (player) => {
     player.loop = true
     player.muted = isMuted
     onPlayerReady(player)
   })
 
-  // Auto-play when active
   useEffect(() => {
     if (isActive && isScreenFocused) {
       player.play()
@@ -179,9 +253,6 @@ export default function ReelsScreen() {
 
   return (
     <View style={{ height: screenHeight, width: screenWidth }}>
-   {/* LAYER 1: VIDEO */}
-      {/* This fills the WHOLE screen, including behind the tabs. */}
-      {/* NO bottom padding here! */}
       <VideoView
         style={{ flex: 1, width: '100%', height: '100%' }}
         player={player}
@@ -189,15 +260,10 @@ export default function ReelsScreen() {
         nativeControls={false}
       />
       
-   {/* LAYER 2: UI OVERLAY */}
-      {/* THIS is where you use the bottom spacing. */}
-      {/* It floats on top of the video, respecting the tab bar height. */}
-      
-      {/* Actions (Right side) */}
       <View style={{ 
         position: 'absolute', 
-        bottom: 0, // Safe space above tabs (85 + 15 buffer)
-        right: 12,
+        bottom: 4, 
+        right: 2,
         zIndex: 20 
       }}>
         <ReelActions
@@ -211,15 +277,17 @@ export default function ReelsScreen() {
           }}
           onLikePress={onLikePress}
           onSavePress={onSavePress}
+          comments={reelComments[reel.id] || []}
+          onLikeComment={onLikeComment}
+          onAddComment={(text: string) => onAddComment(reel.id, text)}
         />
       </View>
 
-      {/* User Info (Left side) */}
       <View style={{ 
         position: 'absolute', 
-        bottom: 0, // Safe space above tabs
+        bottom: 0, 
         left: 4,
-        right: 60, // Leave room for right-side buttons
+        right: 60, 
         zIndex: 20
       }}>
         <ReelUserInfo
@@ -234,4 +302,4 @@ export default function ReelsScreen() {
       </View>
     </View>
   )
-}
+})
