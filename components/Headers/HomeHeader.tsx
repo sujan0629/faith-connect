@@ -1,6 +1,8 @@
 import { View, Text, Pressable, Image, Animated, Easing } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'expo-router'
+import { useAuthStore } from '../../stores/authStore'
 
 const segments = ['Explore', 'Following'] as const
 type Segment = (typeof segments)[number]
@@ -12,6 +14,8 @@ interface HomeHeaderProps {
 }
 
 export const HomeHeader = ({ segment, onSegmentChange, isAtTop }: HomeHeaderProps) => {
+  const router = useRouter()
+  const user = useAuthStore((s) => s.user)
   const [isExpanded, setIsExpanded] = useState(false)
   const toggleOpacity = useRef(new Animated.Value(0)).current
 
@@ -29,7 +33,7 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop }: HomeHeaderProp
     <View className="bg-white">
       <View className="flex-row items-center justify-between px-4 py-3">
         <Pressable className="h-9 w-9 items-center justify-center">
-          <Ionicons name="add" size={28} color="#111111" />
+          <Ionicons name="filter" size={24} color="#111111" />
         </Pressable>
         <Pressable 
           className="flex-row items-center gap-1"
@@ -44,9 +48,12 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop }: HomeHeaderProp
             color="#111111" 
           />
         </Pressable>
-        <Pressable className="h-9 w-9 items-center justify-center">
+        <Pressable 
+          className="h-9 w-9 items-center justify-center"
+          onPress={() => user?.id && router.push(`/profile/${user.id}` as any)}
+        >
           <Image 
-            source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHww' }} 
+            source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHww' }} 
             className="h-9 w-9 rounded-full bg-gray-200" 
           />
         </Pressable>
@@ -59,7 +66,7 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop }: HomeHeaderProp
               <Pressable
                 key={item}
                 onPress={() => onSegmentChange(item)}
-                className={`flex-1 rounded-full px-6 py-2.5 ${segment === item ? 'bg-[#2b2b2b]' : 'bg-transparent'}`}
+                className={`flex-1 rounded-full px-6 py-2.5 ${segment === item ? 'bg-[#111]' : 'bg-transparent'}`}
               >
                 <Text className={`text-center text-sm font-semibold ${segment === item ? 'text-white' : 'text-gray-600'}`}>
                   {item}

@@ -2,7 +2,7 @@ import { View, Text, Pressable, Image } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Post } from '../../stores/feedStore'
 import { WebView } from 'react-native-webview'
-import { SolidButton } from '../Buttons/SolidButton'
+import { SolidButton } from '../Buttons/SolidButtonTwo'
 
 interface Props {
   post: Post
