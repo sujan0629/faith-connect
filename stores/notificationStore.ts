@@ -7,7 +7,6 @@ export type NotificationMention = {
   authorName: string
   authorAvatar: string
   isVerified: boolean
-  faith: string
   comment: string
   replyingTo?: string
   createdAt: string
@@ -42,7 +41,6 @@ const seedNotifications: Notification[] = [
     authorName: 'Pastor Grace',
     authorAvatar: 'https://i.pravatar.cc/150?img=1',
     isVerified: true,
-    faith: 'Christian',
     comment: 'This is such a powerful message! Thank you for sharing this perspective.',
     replyingTo: 'user123',
     createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
@@ -66,7 +64,6 @@ const seedNotifications: Notification[] = [
     authorName: 'Rabbi Leah',
     authorAvatar: 'https://i.pravatar.cc/150?img=3',
     isVerified: true,
-    faith: 'Jewish',
     comment: 'I completely agree with your thoughts on this matter. Well articulated!',
     createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     unread: false,
@@ -89,7 +86,6 @@ const seedNotifications: Notification[] = [
     authorName: 'Dr. Smith',
     authorAvatar: 'https://i.pravatar.cc/150?img=5',
     isVerified: false,
-    faith: 'Buddhist',
     comment: 'Interesting take on mindfulness practices. Would love to discuss further!',
     createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
     unread: false,
