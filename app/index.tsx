@@ -1,71 +1,70 @@
 import { Link } from 'expo-router'
-import { LinearGradient } from 'expo-linear-gradient'
 import { View, Text, Image, Pressable } from 'react-native'
 import { useAuthStore } from '../stores/authStore'
-
-const roles = [
-	{
-		key: 'worshiper' as const,
-		title: 'Continue as Worshiper',
-		blurb: 'Follow leaders, learn, and stay inspired.',
-	},
-	{
-		key: 'leader' as const,
-		title: 'Continue as Religious Leader',
-		blurb: 'Share guidance, posts, and reels with your community.',
-	},
-]
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import appIcon from '../assets/images/icon.png'
 
 export default function Landing() {
-	const setRolePreference = useAuthStore((s) => s.setRolePreference)
+    const setRolePreference = useAuthStore((s) => s.setRolePreference)
+    const insets = useSafeAreaInsets()
 
-	return (
-		<LinearGradient style={{ flex: 1 }} colors={['#0B1220', '#0F172A', '#0B1220']} className="flex-1">
-			<View className="flex-1 px-6 pb-10 pt-16">
-				<Text className="text-3xl font-bold text-white">FaithConnect</Text>
-				<Text className="mt-3 text-base text-slate-300">
-					A platform where Worshipers connect with their Religious Leaders.
-				</Text>
+    return (
+        <View className="flex-1 bg-white">
+            <View 
+                style={{ 
+                    paddingTop: insets.top + 40, 
+                    paddingBottom: insets.bottom + 20 
+                }} 
+                className="flex-1 px-6 justify-between"
+            >
+                {/* Top Section: Logo and Branding centered */}
+                <View className="flex-1 justify-center items-center">
+                    <Image 
+                        source={appIcon} 
+                        style={{ width: 240, height: 150 }}
+                        resizeMode="contain"
+                    />
+                    <Text className="text-3xl font-bold text-gray-900 mt-4">FaithConnect</Text>
+                    <Text className="mt-6 text-center text-sm text-gray-600">
+                        A platform where Worshipers connect with their {"\n"} Religious Leaders.
+                    </Text>
+                </View>
 
-				<View className="mt-12 items-center">
-					<View className="h-44 w-full overflow-hidden rounded-3xl border border-white/5 bg-white/5">
-						<LinearGradient
-							colors={["#1E3A8A", "#0EA5E9"]}
-							start={{ x: 0, y: 0 }}
-							end={{ x: 1, y: 1 }}
-							className="absolute inset-0 opacity-70"
-						/>
-						<View className="absolute bottom-4 left-4 right-4">
-							<Text className="text-lg font-semibold text-white">Connect. Learn. Grow.</Text>
-							<Text className="mt-1 text-sm text-slate-200">
-								Join a calm, respectful space for spiritual content, reels, and conversations.
-							</Text>
-						</View>
-					</View>
-				</View>
+                {/* Bottom Section: Buttons and Footer */}
+                <View className="w-full">
+                    <View className="gap-4">
+                        <Link
+                            href="/auth/login"
+                            asChild
+                            onPress={() => setRolePreference('worshiper')}
+                        >
+                            <Pressable className="rounded-2xl bg-blue-500 px-6 py-4">
+                                <Text className="text-center text-base font-semibold text-white">Continue as Worshiper</Text>
+                            </Pressable>
+                        </Link>
+                        
+                        <Link
+                            href="/auth/login"
+                            asChild
+                            onPress={() => setRolePreference('leader')}
+                        >
+                            <Pressable className="rounded-2xl bg-gray-200 px-6 py-4">
+                                <Text className="text-center text-base font-semibold text-gray-700">Continue as Religious Leader</Text>
+                            </Pressable>
+                        </Link>
+                    </View>
 
-				<View className="mt-12 space-y-4">
-					{roles.map((role) => (
-						<Link
-							key={role.key}
-							href="/auth/login"
-							asChild
-							onPress={() => setRolePreference(role.key)}
-						>
-							<Pressable className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-								<Text className="text-base font-semibold text-white">{role.title}</Text>
-								<Text className="mt-1 text-sm text-slate-300">{role.blurb}</Text>
-							</Pressable>
-						</Link>
-					))}
-				</View>
+                    {/* Horizontal Line */}
+                    <View className="h-[1px] w-full bg-gray-100 mt-10 mb-6" />
 
-				<View className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4">
-					<Text className="text-sm text-slate-300">
-						Build a focused prototype: feeds, reels, follow, messaging, and notifications are ready to explore.
-					</Text>
-				</View>
-			</View>
-		</LinearGradient>
-	)
+                    {/* Footer Links */}
+                    <View className="px-6">
+        <Text className="text-[11px] text-center leading-5">
+            If you have any questions, <Text className="font-semibold">visit our Help Center</Text>.
+        </Text>
+    </View>
+                </View>
+            </View>
+        </View>
+    )
 }
