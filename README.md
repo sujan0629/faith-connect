@@ -1,83 +1,127 @@
-# FaithConnect
+# FaithConnect Monorepo
 
-<img src="./assets/design/home.jpeg" alt="FaithConnect Home" width="300">
+A modern full-stack application built with **pnpm workspaces** and **Turborepo** for efficient monorepo management.
 
-## Overview
+## Structure
 
-FaithConnect is a mobile-first social platform designed to connect worshipers with faith leaders across multiple religious communities. Built with React Native and Expo, the app provides a seamless experience for sharing spiritual guidance, engaging with religious content, and fostering meaningful connections within faith communities.
+```
+faithConnect/
+├── backend/          # NestJS API
+├── mobile/           # Expo React Native app
+├── shared/           # Shared TypeScript types & DTOs
+├── turbo.json        # Turborepo configuration
+└── pnpm-workspace.yaml  # pnpm workspace config
+```
 
-## Features
+## Prerequisites
 
-- **Home Feed**: Scroll through posts, videos, and reels from faith leaders
-- **Sticky Animated Header**: Smooth header animations with expandable Explore/Following toggle
-- **Video Support**: Native video playback for reels (9:16) and posts (16:9)
-- **Leaders**: Discover and follow faith leaders from various religious backgrounds
-- **Messages**: Direct messaging with leaders and community members
-- **Notifications**: Stay updated with engagement and community activities
-- **Reels**: Short-form vertical video content from faith leaders
+- **Node.js** >= 18.0.0
+- **pnpm** >= 8.0.0
 
-## Tech Stack
+Install pnpm globally:
+```bash
+npm install -g pnpm@8.15.0
+```
 
-- **Framework**: Expo SDK 54 + React Native 0.81.5
-- **Routing**: Expo Router (file-based routing)
-- **Styling**: NativeWind 4.1.23 (Tailwind CSS for React Native)
-- **State Management**: Zustand 5.0.6
-- **Video**: expo-video for native video playback
-- **Fonts**: Roboto (custom font family)
-- **UI Design**: iOS-style light theme
+## Setup
 
-## Design Philosophy
-
-FaithConnect features a clean, iOS-inspired design with:
-- White backgrounds and dark text for readability
-- No shadows for a flat, modern aesthetic
-- Smooth animations and transitions
-- Consistent typography using Roboto font
-- Intuitive navigation with icon-only bottom tabs
-
-## Installation
+### Install Dependencies
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm start
-
-# Run on iOS
-npm run ios
-
-# Run on Android
-npm run android
+# Install all dependencies (root + all workspaces)
+pnpm install
 ```
 
-## Project Structure
+That's it! pnpm will automatically install dependencies for all workspaces and link them together.
 
+### Running the Apps
+
+**All services with Turbo TUI**:
+```bash
+pnpm dev
 ```
-app/
-  (tabs)/         # Bottom tab navigation screens
-  auth/          # Authentication screens
-  leaders/       # Leader profile screens
-  messages/      # Chat screens
-components/
-  Buttons/       # Reusable button components
-  Feed/          # PostCard, ReelCard components
-  Headers/       # HomeHeader, TopBar components
-  InputFields/   # Form input components
-stores/          # Zustand state management
-assets/
-  design/        # Design mockups and references
-  images/        # App icons and splash screens
+This starts backend, mobile, and shared in watch mode with a beautiful terminal UI.
+
+**Individual services**:
+```bash
+# Backend only
+pnpm dev:backend
+
+# Mobile only
+pnpm dev:mobile
+
+# Shared (watch mode)
+pnpm dev:shared
 ```
 
-## License
+**Build**:
+```bash
+# Build all packages
+pnpm build
 
-Proprietary - All rights reserved. See [LICENSE](./LICENSE) for details.
+# Build shared only
+pnpm build:shared
+```
 
-## Author
+## Shared Package
 
-**Sujan Bhatta**
+The `shared` folder contains TypeScript definitions shared between backend and mobile:
 
----
+- **Types**: User types, roles, auth responses
+- **DTOs**: Request/response interfaces for API endpoints
+- **Constants**: Shared enums and constants
 
-© 2026 FaithConnect. All rights reserved.
+### Using Shared Types
+
+**Backend (NestJS)**:
+```typescript
+import type { Role, UserProfile } from '@faithconnect/shared';
+```
+
+**Mobile (React Native)**:
+```typescript
+import type { Role, UserProfile } from '@faithconnect/shared';
+```
+
+## Benefits
+
+1. **Type Safety**: Shared types ensure frontend and backend stay in sync
+2. **Single Source of Truth**: DTOs defined once, used everywhere
+3. **Refactoring**: Changes to types propagate automatically
+4. **Less Duplication**: No need to manually keep types in sync
+5. **Fast Builds**: Turborepo caches build outputs and runs tasks in parallel
+6. **Efficient Dependencies**: pnpm creates a single content-addressable store
+
+## Development Workflow
+
+1. Update types in `shared/src/`
+2. Turborepo automatically rebuilds dependents
+3. Backend and mobile hot-reload with updated types
+4. TypeScript catches any breaking changes immediately
+
+## Turborepo Features
+
+- **Parallel Execution**: Runs tasks across workspaces simultaneously
+- **Smart Caching**: Never rebuilds the same thing twice
+- **Dependency Graph**: Understands workspace relationships
+- **TUI Mode**: Beautiful terminal interface showing all running processes
+
+## pnpm Features
+
+- **Fast**: Up to 2x faster than npm
+- **Efficient**: Saves disk space with content-addressable storage
+- **Strict**: Better dependency management and no phantom dependencies
+- **Workspace Protocol**: Native monorepo support
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `pnpm install` | Install all dependencies |
+| `pnpm dev` | Run all services with Turbo TUI |
+| `pnpm build` | Build all packages |
+| `pnpm dev:backend` | Run backend only |
+| `pnpm dev:mobile` | Run mobile only |
+| `pnpm dev:shared` | Watch shared types |
+| `pnpm lint` | Lint all packages |
+| `pnpm test` | Run all tests |
