@@ -1,0 +1,46 @@
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.*.local
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Dependency directories
+.pnp/
+.pnp.js
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Optional npm cache
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Misc
+tmp/
+temp/
