@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FaithConnect</title>
+
+  <style>
+    :root {
+      --spinner-color: #69717d;
+      --spinner-size: 48px;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+    }
+
+    .spinner {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 1rem;
+      height: 1rem;
+      font-size: var(--spinner-size);
+    }
+
+    .spinner-blade {
+      position: absolute;
+      left: 0.4629em;
+      bottom: 0;
+      width: 0.074em;
+      height: 0.2777em;
+      border-radius: 0.0555em;
+      background-color: transparent;
+      transform-origin: center -0.2222em;
+      animation: spinner-fade 1s infinite linear;
+    }
+    @media (max-width: 768px) {
+  :root {
+    --spinner-size: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --spinner-size: 32px;
+  }
+}
+
+
+    .spinner-blade:nth-child(1)  { transform: rotate(0deg);   animation-delay: 0s; }
+    .spinner-blade:nth-child(2)  { transform: rotate(30deg);  animation-delay: .083s; }
+    .spinner-blade:nth-child(3)  { transform: rotate(60deg);  animation-delay: .166s; }
+    .spinner-blade:nth-child(4)  { transform: rotate(90deg);  animation-delay: .249s; }
+    .spinner-blade:nth-child(5)  { transform: rotate(120deg); animation-delay: .332s; }
+    .spinner-blade:nth-child(6)  { transform: rotate(150deg); animation-delay: .415s; }
+    .spinner-blade:nth-child(7)  { transform: rotate(180deg); animation-delay: .498s; }
+    .spinner-blade:nth-child(8)  { transform: rotate(210deg); animation-delay: .581s; }
+    .spinner-blade:nth-child(9)  { transform: rotate(240deg); animation-delay: .664s; }
+    .spinner-blade:nth-child(10) { transform: rotate(270deg); animation-delay: .747s; }
+    .spinner-blade:nth-child(11) { transform: rotate(300deg); animation-delay: .83s; }
+    .spinner-blade:nth-child(12) { transform: rotate(330deg); animation-delay: .913s; }
+
+    @keyframes spinner-fade {
+      0% { background-color: var(--spinner-color); }
+      100% { background-color: transparent; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="overlay">
+    <div class="spinner">
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+      <div class="spinner-blade"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const DEEP_LINK_SCHEME = 'faithconnect://magic-login';
+      const EXPO_GO_DEV = 'exp://192.168.1.175:8081/--/magic-login';
+      const FALLBACK_WEB = 'https://faithconnectapp.netlify.app';
+      const OPEN_TIMEOUT = 1800;
+
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token') || '';
+      const email = params.get('email') || '';
+      const code = params.get('code') || '';
+      const signup = params.get('signup') || '';
+      const env = params.get('env');
+
+      const query = new URLSearchParams({ token, email, code, signup }).toString();
+      const deepLink = env === 'dev'
+        ? `${EXPO_GO_DEV}?${query}`
+        : `${DEEP_LINK_SCHEME}?${query}`;
+
+      const tryOpen = () => {
+        const start = Date.now();
+        window.location.href = deepLink;
+
+        setTimeout(() => {
+          if (Date.now() - start < OPEN_TIMEOUT) {
+            window.location.href = FALLBACK_WEB;
+          }
+        }, OPEN_TIMEOUT);
+      };
+
+      tryOpen();
+    })();
+  </script>
+
+</body>
+</html>
