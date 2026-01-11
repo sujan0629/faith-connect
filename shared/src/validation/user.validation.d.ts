@@ -1,0 +1,94 @@
+import { z } from 'zod';
+export declare const usernameValidator: z.ZodString;
+export declare const UpdateProfileSchema: z.ZodObject<{
+    username: z.ZodOptional<z.ZodString>;
+    name: z.ZodOptional<z.ZodString>;
+    faith: z.ZodOptional<z.ZodString>;
+    bio: z.ZodOptional<z.ZodString>;
+    avatar: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodString]>>;
+    denomination: z.ZodOptional<z.ZodString>;
+    contentFocus: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    audiencePrefs: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    role: z.ZodOptional<z.ZodEnum<["worshiper", "leader"]>>;
+    onboardingCompleted: z.ZodOptional<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    role?: "worshiper" | "leader" | undefined;
+    name?: string | undefined;
+    username?: string | undefined;
+    faith?: string | undefined;
+    bio?: string | undefined;
+    avatar?: string | undefined;
+    denomination?: string | undefined;
+    contentFocus?: string[] | undefined;
+    audiencePrefs?: string[] | undefined;
+    onboardingCompleted?: boolean | undefined;
+}, {
+    role?: "worshiper" | "leader" | undefined;
+    name?: string | undefined;
+    username?: string | undefined;
+    faith?: string | undefined;
+    bio?: string | undefined;
+    avatar?: string | undefined;
+    denomination?: string | undefined;
+    contentFocus?: string[] | undefined;
+    audiencePrefs?: string[] | undefined;
+    onboardingCompleted?: boolean | undefined;
+}>;
+export declare const CompleteOnboardingSchema: z.ZodEffects<z.ZodObject<{
+    username: z.ZodString;
+    name: z.ZodString;
+    faith: z.ZodString;
+    bio: z.ZodOptional<z.ZodString>;
+    avatar: z.ZodOptional<z.ZodString>;
+    denomination: z.ZodOptional<z.ZodString>;
+    role: z.ZodEnum<["worshiper", "leader"]>;
+    contentFocus: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    audiencePrefs: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
+    onboardingCompleted: z.ZodLiteral<true>;
+}, "strip", z.ZodTypeAny, {
+    role: "worshiper" | "leader";
+    name: string;
+    username: string;
+    faith: string;
+    onboardingCompleted: true;
+    bio?: string | undefined;
+    avatar?: string | undefined;
+    denomination?: string | undefined;
+    contentFocus?: string[] | undefined;
+    audiencePrefs?: string[] | undefined;
+}, {
+    role: "worshiper" | "leader";
+    name: string;
+    username: string;
+    faith: string;
+    onboardingCompleted: true;
+    bio?: string | undefined;
+    avatar?: string | undefined;
+    denomination?: string | undefined;
+    contentFocus?: string[] | undefined;
+    audiencePrefs?: string[] | undefined;
+}>, {
+    role: "worshiper" | "leader";
+    name: string;
+    username: string;
+    faith: string;
+    onboardingCompleted: true;
+    bio?: string | undefined;
+    avatar?: string | undefined;
+    denomination?: string | undefined;
+    contentFocus?: string[] | undefined;
+    audiencePrefs?: string[] | undefined;
+}, {
+    role: "worshiper" | "leader";
+    name: string;
+    username: string;
+    faith: string;
+    onboardingCompleted: true;
+    bio?: string | undefined;
+    avatar?: string | undefined;
+    denomination?: string | undefined;
+    contentFocus?: string[] | undefined;
+    audiencePrefs?: string[] | undefined;
+}>;
+export type UpdateProfileInput = z.infer<typeof UpdateProfileSchema>;
+export type CompleteOnboardingInput = z.infer<typeof CompleteOnboardingSchema>;
