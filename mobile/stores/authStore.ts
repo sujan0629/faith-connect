@@ -1,0 +1,73 @@
+import { create } from 'zustand'
+import { setAccessToken } from '../api/axios'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import type { Role, UserProfile } from '@faithconnect/shared'
+
+export type { Role, UserProfile }
+
+type AuthState = {
+	user?: UserProfile
+	accessToken?: string
+	refreshToken?: string
+	rolePreference: Role
+	isAuthenticated: boolean
+	isHydrated: boolean
+	setRolePreference: (role: Role) => void
+	setAuth: (payload: { user: UserProfile; accessToken: string; refreshToken: string }) => void
+	updateUser: (payload: Partial<UserProfile>) => void
+	logout: () => void
+	hydrate: () => Promise<void>
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+	user: undefined,
+	accessToken: undefined,
+	refreshToken: undefined,
+	rolePreference: 'worshiper',
+	isAuthenticated: false,
+	isHydrated: false,
+	setRolePreference: (role) => set({ rolePreference: role }),
+	setAuth: async ({ user, accessToken, refreshToken }) => {
+		setAccessToken(accessToken)
+		const state = {
+			user,
+			accessToken,
+			refreshToken,
+			isAuthenticated: true,
+			rolePreference: user.role ?? get().rolePreference,
+		}
+		set(state)
+		await AsyncStorage.setItem('auth', JSON.stringify(state)).catch(() => {})
+	},
+	updateUser: async (payload) => {
+		const current = get().user
+		if (!current) return
+		const updated = { ...current, ...payload }
+		set({ user: updated })
+		const stored = await AsyncStorage.getItem('auth').catch(() => null)
+		if (stored) {
+			const parsed = JSON.parse(stored)
+			parsed.user = updated
+			await AsyncStorage.setItem('auth', JSON.stringify(parsed)).catch(() => {})
+		}
+	},
+	logout: async () => {
+		setAccessToken(null)
+		set({ user: undefined, accessToken: undefined, refreshToken: undefined, isAuthenticated: false })
+		await AsyncStorage.removeItem('auth').catch(() => {})
+	},
+	hydrate: async () => {
+		try {
+			const stored = await AsyncStorage.getItem('auth')
+			if (stored) {
+				const parsed = JSON.parse(stored)
+				if (parsed.accessToken && parsed.user) {
+					setAccessToken(parsed.accessToken)
+					set({ ...parsed, isAuthenticated: true, isHydrated: true })
+					return
+				}
+			}
+		} catch {}
+		set({ isHydrated: true })
+	},
+}))

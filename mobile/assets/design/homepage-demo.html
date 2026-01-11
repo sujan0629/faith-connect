@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Feed Replica</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-main: #111111;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --accent-blue-bg: #DCEBFF;
+            --accent-blue-text: #007AFF;
+            --divider: #f0f0f0;
+            --dark-btn: #2b2b2b;
+            --nav-bg: #222222;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Phone Container */
+        .phone-frame {
+            width: 100%;
+            max-width: 375px; /* iPhone width */
+            background-color: var(--bg-color);
+            height: 100vh;
+            max-height: 812px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: 40px; /* Outer rounded corners like a modern phone */
+        }
+        
+        /* Remove border radius if on mobile view */
+        @media (max-width: 480px) {
+            .phone-frame {
+                max-width: 100%;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 44px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 20px 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .status-icons span { margin-left: 5px; }
+
+        /* Scrollable Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 90px; /* Space for nav bar */
+            scrollbar-width: none; /* Hide scrollbar Firefox */
+        }
+        .content::-webkit-scrollbar { display: none; } /* Hide scrollbar Chrome */
+
+        /* Header */
+        .app-header {
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .profile-pic-sm {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #ddd;
+            overflow: hidden;
+        }
+        .profile-pic-sm img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            padding: 10px 20px;
+            gap: 20px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .tab.active {
+            background-color: var(--dark-btn);
+            color: white;
+        }
+        .tab.inactive {
+            color: var(--text-secondary);
+        }
+
+        /* Post Styles */
+        .post {
+            padding: 20px 20px 0 20px;
+            border-bottom: 1px solid var(--divider);
+        }
+        .post:last-child { border: none; }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #ccc;
+            margin-right: 10px;
+            overflow: hidden;
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .user-info {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .username {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+        .meta {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+        }
+        .meta .dots { margin-left: 10px; font-weight: bold; letter-spacing: 1px; cursor: pointer; }
+
+        .post-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* Video Card */
+        .video-card {
+            width: 100%;
+            height: 200px;
+            background-color: #000;
+            border-radius: 12px;
+            position: relative;
+            margin-bottom: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .video-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.8;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-controls-main {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .video-controls-bottom {
+            position: absolute;
+            bottom: 10px;
+            width: 90%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 3px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            position: relative;
+        }
+        .progress-fill {
+            width: 30%;
+            height: 100%;
+            background: white;
+        }
+
+        .video-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+
+        /* Action Bar */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0 20px 0;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        /* Special styled bookmark button */
+        .bookmark-pill {
+            background-color: var(--accent-blue-bg);
+            color: var(--accent-blue-text);
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-weight: 600;
+        }
+        .bookmark-pill svg { fill: var(--accent-blue-text); }
+
+        /* Bottom Nav */
+        .bottom-nav-container {
+            position: absolute;
+            bottom: 25px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            pointer-events: none; /* Let clicks pass through sides */
+        }
+        
+        .bottom-nav {
+            background-color: var(--nav-bg);
+            height: 60px;
+            width: 90%;
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 10px;
+            pointer-events: auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .nav-item {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .nav-item.active {
+            background-color: white;
+        }
+        .nav-item.active svg { stroke: black; fill: black; }
+        .nav-item svg { stroke: #999; fill: none; }
+
+        /* Utility for Icons */
+        svg { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+                <svg width="18" height="12" viewBox="0 0 18 12" style="display:inline-block">
+                    <rect x="1" y="8" width="3" height="4" rx="1" fill="#000"/>
+                    <rect x="6" y="5" width="3" height="7" rx="1" fill="#000"/>
+                    <rect x="11" y="2" width="3" height="10" rx="1" fill="#000"/>
+                    <rect x="16" y="0" width="3" height="12" rx="1" fill="#ddd"/> </svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" style="display:inline-block; margin-left:4px;">
+                    <path d="M8,12 L1.5,4 C3.5,2 5.5,1 8,1 C10.5,1 12.5,2 14.5,4 L8,12" fill="#000"/>
+                </svg>
+                <svg width="24" height="12" viewBox="0 0 24 12" style="display:inline-block; margin-left:4px;">
+                    <rect x="1" y="1" width="18" height="10" rx="2" stroke="#000" fill="none"/>
+                    <rect x="3" y="3" width="12" height="6" rx="1" fill="#000"/>
+                    <path d="M21,4 L21,8" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="app-header">
+                <h1>Home Feed</h1>
+                <div class="profile-pic-sm">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" alt="Profile">
+                </div>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active">Explore</div>
+                <div class="tab inactive">Following</div>
+            </div>
+
+            <div class="post">
+                <div class="post-header">
+                    <div class="avatar">
+                        <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" alt="Avatar">
+                    </div>
+                    <div class="user-info">
+                        <div>
+                            <span class="username">Rabbi Abraham Cohen</span>
+                        </div>
+                        <div class="meta">
+                            <span>1 hour ago</span>
+                            <span class="dots">•••</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-text">
+                    Lorem ipsum dolor sit amet consectetur. Nisl feugiat gravida faucibus venenatis ornare dictum vulputate purus duis. Justo dictumst gravida egestas mauris sed scelerisque in pulvinar. Enim morbi senectus est et ac.
+                </div>
+                <div class="action-bar">
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                        180K
+                    </div>
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        48.8K
+                    </div>
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        12K
+                    </div>
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                        82K
+                    </div>
+                </div>
+            </div>
+
+            <div class="post">
+                <div class="post-header">
+                    <div class="avatar">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" alt="Avatar">
+                    </div>
+                    <div class="user-info">
+                        <div>
+                            <span class="username">Rabbi Aaron Kaplan</span>
+                        </div>
+                        <div class="meta">
+                            <span>2 hour ago</span>
+                            <span class="dots">•••</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-card">
+                    <img src="https://images.unsplash.com/photo-1544717297-fa95b6ee9643?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="video-bg" alt="Video">
+                    <div class="video-overlay">
+                        <div class="video-controls-main">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><text x="8" y="16" fill="white" font-size="8" font-family="Arial" text-anchor="middle">10</text></svg>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><text x="16" y="16" fill="white" font-size="8" font-family="Arial" text-anchor="middle">10</text></svg>
+                        </div>
+                        <div class="video-controls-bottom">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon></svg>
+                            <div class="progress-bar">
+                                <div class="progress-fill"></div>
+                            </div>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-title">Video Title Goes Here...</div>
+                <div class="post-text">
+                    Lorem ipsum dolor sit amet consectetur. Vivamus aenean accumsan ipsum blandit velit neque.
+                </div>
+
+                <div class="action-bar">
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                        12K
+                    </div>
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        20.2K
+                    </div>
+                    <div class="action-item bookmark-pill">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        16K
+                    </div>
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                        42K
+                    </div>
+                </div>
+            </div>
+
+            <div class="post">
+                <div class="post-header">
+                    <div class="avatar">
+                        <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" alt="Avatar">
+                    </div>
+                    <div class="user-info">
+                        <div>
+                            <span class="username">Rabbi David Rosenberg</span>
+                        </div>
+                        <div class="meta">
+                            <span>2 hour ago</span>
+                            <span class="dots">•••</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-text">
+                    Lorem ipsum dolor sit amet consectetur. Pretium mattis facilisi in facilisis at sit.
+                </div>
+                <div class="action-bar">
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                        11K
+                    </div>
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        20K
+                    </div>
+                    <div class="action-item bookmark-pill">
+                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        14K
+                    </div>
+                    <div class="action-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                        39K
+                    </div>
+                </div>
+            </div>
+
+            <div class="post">
+                <div class="post-header">
+                    <div class="avatar">
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80" alt="Avatar">
+                    </div>
+                    <div class="user-info">
+                        <div>
+                            <span class="username">Rabbi Samuel Katz</span>
+                        </div>
+                        <div class="meta">
+                            <span>6 hour ago</span>
+                            <span class="dots">•••</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-text">
+                    Lorem ipsum dolor sit amet consectetur. Sit sodales in penatibus tortor in pretium auctor eu varius.
+                </div>
+                <div class="video-card" style="height: 120px; border-radius: 12px 12px 0 0;">
+                    <img src="https://images.unsplash.com/photo-1548263594-a71c358825eb?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80" class="video-bg" alt="Image">
+                </div>
+            </div>
+            
+            <div style="height: 50px;"></div>
+        </div>
+
+        <div class="bottom-nav-container">
+            <div class="bottom-nav">
+                <div class="nav-item active">
+                    <svg width="24" height="24" viewBox="0 0 24 24" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                </div>
+                <div class="nav-item">
+                    <svg width="24" height="24" viewBox="0 0 24 24" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 14c-4 0-6-3-6-3l1-8 5 2 5-2 1 8s-2 3-6 3z"/> <path d="M12 6v-3"/>
+                        <path d="M12 3a1 1 0 0 1 0-2"/>
+                    </svg>
+                </div>
+                <div class="nav-item">
+                    <svg width="24" height="24" viewBox="0 0 24 24" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                         <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                         <path d="M10 8l6 4-6 4V8z"></path>
+                    </svg>
+                </div>
+                <div class="nav-item">
+                    <svg width="24" height="24" viewBox="0 0 24 24" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        <circle cx="8" cy="11" r="1" fill="#ccc" stroke="none"/>
+                        <circle cx="12" cy="11" r="1" fill="#ccc" stroke="none"/>
+                        <circle cx="16" cy="11" r="1" fill="#ccc" stroke="none"/>
+                    </svg>
+                </div>
+                <div class="nav-item">
+                    <svg width="24" height="24" viewBox="0 0 24 24" stroke="#ccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div style="position: absolute; bottom: 8px; width: 100%; display: flex; justify-content: center;">
+            <div style="width: 120px; height: 5px; background: #000; border-radius: 3px;"></div>
+        </div>
+    </div>
+
+</body>
+</html>
