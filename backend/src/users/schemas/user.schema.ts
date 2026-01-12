@@ -66,6 +66,40 @@ export class User {
 
   @Prop({ type: [String], default: [] })
   audiencePrefs?: string[];
+
+  @Prop({ type: [String], default: [] })
+  following?: string[]; // Array of leader IDs this user follows
+
+  @Prop({ type: [String], default: [] })
+  followers?: string[]; // Array of user IDs following this user (for leaders)
+
+  @Prop({ type: [String], default: [] })
+  blockedUsers?: string[]; // Array of user IDs blocked by this user
+
+  @Prop({ type: [String], default: [] })
+  blockedBy?: string[]; // Array of user IDs who blocked this user
+
+  // Settings & Preferences
+  @Prop({ default: true })
+  notificationsEnabled?: boolean;
+
+  @Prop({ default: true })
+  emailNotificationsEnabled?: boolean;
+
+  @Prop({ default: true })
+  allowMessagesFromAnyone?: boolean;
+
+  @Prop({ default: false })
+  privateProfile?: boolean;
+
+  @Prop({ default: true })
+  allowComments?: boolean;
+
+  @Prop({ enum: ['everyone', 'followers', 'none'], default: 'everyone' })
+  whoCanLike?: string;
+
+  @Prop({ type: [String], default: [] })
+  blockedContentTopics?: string[]; // Topics to filter out from feed
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

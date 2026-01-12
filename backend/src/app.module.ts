@@ -6,6 +6,10 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { LeadersModule } from './leaders/leaders.module';
+import { MessagesModule } from './messages/messages.module';
+import { PostsModule } from './posts/posts.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -19,6 +23,10 @@ import { UploadsModule } from './uploads/uploads.module';
     AuthModule,
     UsersModule,
     UploadsModule,
+    LeadersModule,
+    MessagesModule,
+    PostsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
