@@ -164,10 +164,33 @@ export class UploadsService {
         options.upload_preset = this.uploadPreset;
       }
 
+      console.log('Uploading to Cloudinary with options:', {
+        folder,
+        hasPreset: Boolean(this.uploadPreset),
+        uploadPreset: this.uploadPreset,
+        bufferSize: buffer.length,
+      });
+
       const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
-        if (error) return reject(error);
-        if (!result) return reject(new InternalServerErrorException('Upload failed'));
+        if (error) {
+          console.error('Cloudinary upload stream error:', {
+            message: error.message,
+            http_code: error.http_code,
+            status: error.status,
+            error: error,
+          });
+          return reject(error);
+        }
+        if (!result) {
+          console.error('Cloudinary upload returned no result');
+          return reject(new InternalServerErrorException('Upload failed - no result from Cloudinary'));
+        }
+        console.log('Cloudinary upload successful:', { publicId: result.public_id, url: result.secure_url });
         resolve(result);
+      });
+
+      stream.on('error', (err) => {
+        console.error('Stream error:', err);
       });
 
       stream.end(buffer);
