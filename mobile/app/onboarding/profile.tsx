@@ -15,6 +15,7 @@ import { Entypo, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from "expo-router";
 import { api } from "../../api/axios";
+import { uploadsApi } from "../../api/uploads";
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../../components/ToastConfig';
 import { useAuthStore } from '../../stores/authStore';
@@ -138,14 +139,13 @@ export default function FaithConnectOnboarding() {
       let uploadedAvatar = avatar;
 
       if (avatar && avatarFile) {
-        const formData = new FormData();
-        formData.append('file', {
-          uri: avatarFile.uri,
-          name: avatarFile.fileName || 'avatar.jpg',
-          type: avatarFile.mimeType || 'image/jpeg',
-        } as any);
-        const uploadRes = await api.post('/uploads', formData);
-        uploadedAvatar = uploadRes.data.url;
+        const uploadRes = await uploadsApi.uploadFile(
+          avatarFile.uri,
+          avatarFile.fileName || `avatar-${Date.now()}.jpg`,
+          avatarFile.mimeType || 'image/jpeg',
+          'avatars'
+        );
+        uploadedAvatar = uploadRes.url;
       }
 
       const profileData: any = { username, name, faith, bio, avatar: uploadedAvatar || undefined, onboardingCompleted: true };

@@ -92,9 +92,12 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@babel/plugin-transform-react-jsx": "^7.27.1",
+    "@babel/preset-env": "^7.28.5",
     "@expo/cli": "^54.0.6",
     "@react-native-community/cli": "^18.0.0",
     "@types/react": "~19.1.10",
+    "babel-preset-expo": "^54.0.9",
     "baseline-browser-mapping": "^2.9.13",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
