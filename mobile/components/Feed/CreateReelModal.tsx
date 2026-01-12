@@ -7,16 +7,23 @@ import {
   TextInput,
   ScrollView,
   Image,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SolidButton } from "../Buttons/SolidButtonTwo";
 import { useAuthStore } from "../../stores/authStore";
+import { useFeedStore } from "../../stores/feedStore";
 import { VideoView, useVideoPlayer } from 'expo-video';
+import Toast from 'react-native-toast-message';
+import { postsApi } from '../../api/posts';
+import { uploadsApi } from '../../api/uploads';
 
 interface CreateReelModalProps {
   visible: boolean;
   onClose: () => void;
   videoUri: string | null;
+  videoDuration?: number; // Duration in seconds
   onPost: (caption: string, videoUri: string) => void;
 }
 
@@ -24,11 +31,14 @@ export const CreateReelModal: React.FC<CreateReelModalProps> = ({
   visible,
   onClose,
   videoUri,
+  videoDuration = 0,
   onPost,
 }) => {
   const user = useAuthStore((s) => s.user);
+  const { setReels } = useFeedStore();
   const [caption, setCaption] = useState("");
   const [isMuted, setIsMuted] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   const textInputRef = useRef<TextInput>(null);
 
   // 1. Initialize Player with Loop enabled
@@ -64,10 +74,85 @@ export const CreateReelModal: React.FC<CreateReelModalProps> = ({
     setIsMuted(player.muted);
   };
 
-  const handlePost = () => {
-    if (caption.trim() && videoUri) {
+  const handlePost = async () => {
+    if (!caption.trim() || !videoUri) {
+      Toast.show({
+        type: 'error',
+        text1: 'Caption required',
+        text2: 'Please add a caption for your reel',
+      });
+      return;
+    }
+
+    setIsPosting(true);
+    try {
+      // Upload video to Cloudinary
+      Toast.show({
+        type: 'info',
+        text1: 'Uploading reel...',
+        text2: 'Please wait while we upload your video',
+      });
+      
+      const uploadedVideo = await uploadsApi.uploadFile(
+        videoUri,
+        `reel-${Date.now()}.mp4`,
+        'video/mp4',
+        'reels'
+      );
+
+      Toast.show({
+        type: 'info',
+        text1: 'Creating reel...',
+        text2: 'Almost done',
+      });
+
+      // Create reel post
+      const createdReel = await postsApi.createReel(
+        'Reel', // title
+        caption.trim(),
+        uploadedVideo.url,
+        uploadedVideo.publicId,
+        videoDuration || (uploadedVideo.duration ? Math.round(uploadedVideo.duration) : 30)
+      );
+      
+      console.log('Created reel response:', JSON.stringify(createdReel, null, 2));
+
+      Toast.show({
+        type: 'success',
+        text1: 'Reel posted!', text2: ' Updating feed...',
+      });
+
+      // Refresh reels feed
+      try {
+        const freshReels = await postsApi.getReels(50, 0);
+        if (freshReels && freshReels.length > 0) {
+          setReels(freshReels);
+        }
+      } catch (error) {
+        console.error('Failed to refresh reels:', error);
+      }
+
       onPost(caption.trim(), videoUri);
       onClose();
+    } catch (error: any) {
+      console.error('Reel creation error:', error);
+      let errorMessage = 'Please try again';
+      
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage = 'Upload took too long. Please check your internet connection and try again.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to post reel',
+        text2: errorMessage,
+      });
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -75,10 +160,12 @@ export const CreateReelModal: React.FC<CreateReelModalProps> = ({
     <Modal
       visible={visible}
       animationType="slide"
-      presentationStyle="pageSheet"
+      presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
+      transparent={Platform.OS === 'android'}
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black">
+      <View className={`flex-1 ${Platform.OS === 'android' ? 'justify-end' : ''}`} style={Platform.OS === 'android' ? { backgroundColor: 'rgba(0,0,0,0.5)' } : {}}>
+        <View className="flex-1 bg-black" style={Platform.OS === 'android' ? { maxHeight: '95%', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' } : {}}>
         {/* --- Header --- */}
         <View className="px-4 pt-4 pb-3 border-b border-gray-800 bg-black">
           <View className="flex-row items-center justify-between">
@@ -93,10 +180,12 @@ export const CreateReelModal: React.FC<CreateReelModalProps> = ({
                 label="Post"
                 onPress={handlePost}
                 variant="primary"
+                disabled={isPosting || !caption.trim()}
+                loading={isPosting}
                 style={{
                   paddingVertical: 6,
                   paddingHorizontal: 16,
-                  opacity: caption.trim() ? 1 : 0.4,
+                  opacity: isPosting || !caption.trim() ? 0.4 : 1,
                 }}
               />
             </View>
@@ -177,6 +266,7 @@ export const CreateReelModal: React.FC<CreateReelModalProps> = ({
             )}
           </View>
         </ScrollView>
+        </View>
       </View>
     </Modal>
   );

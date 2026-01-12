@@ -1,4 +1,4 @@
-import { View, TextInput, Pressable, Text, Platform } from 'react-native'
+import { View, TextInput, Pressable, Text, Platform, ActivityIndicator } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { Keyboard } from 'react-native'
 import { useState } from 'react'
@@ -10,12 +10,16 @@ import Animated, {
   interpolate, 
   Extrapolation 
 } from 'react-native-reanimated'
+import type { Comment } from '../../stores/commentStore'
 
 interface Props {
   onSubmit: (text: string) => void
+  isSubmitting?: boolean
+  replyingTo?: Comment | null
+  onCancelReply?: () => void
 }
 
-export const CommentInput = ({ onSubmit }: Props) => {
+export const CommentInput = ({ onSubmit, isSubmitting = false, replyingTo, onCancelReply }: Props) => {
   const [comment, setComment] = useState('')
   const insets = useSafeAreaInsets()
   
@@ -59,7 +63,7 @@ export const CommentInput = ({ onSubmit }: Props) => {
   })
 
   const handleSubmit = () => {
-    if (comment.trim()) {
+    if (comment.trim() && !isSubmitting) {
       onSubmit(comment.trim())
       setComment('')
       Keyboard.dismiss()
@@ -71,6 +75,19 @@ export const CommentInput = ({ onSubmit }: Props) => {
       style={[{ backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#e5e5e5' }, animatedContainerStyle]}
       className="px-4 pt-4"
     >
+      {/* Reply context */}
+      {replyingTo && (
+        <View className="mb-3 flex-row items-center justify-between bg-[#f5f5f5] rounded-lg px-3 py-2">
+          <View className="flex-1">
+            <Text className="text-xs text-[#666666]">Replying to <Text className="font-semibold">{replyingTo.authorName}</Text></Text>
+            <Text className="text-sm text-[#111111] mt-1 line-clamp-1">{replyingTo.text}</Text>
+          </View>
+          <Pressable onPress={onCancelReply} className="ml-2 p-2">
+            <Ionicons name="close" size={18} color="#999999" />
+          </Pressable>
+        </View>
+      )}
+      
       <View className="flex-row items-start">
         <View className="flex-1 rounded-2xl bg-[#f5f5f5] px-4 py-2">
           <View className="flex-row items-end">
@@ -87,13 +104,18 @@ export const CommentInput = ({ onSubmit }: Props) => {
             
             <Pressable 
               onPress={handleSubmit}
-              className={`rounded-full ml-2 p-2 ${comment.trim() ? 'bg-black' : 'bg-transparent'}`}
+              disabled={isSubmitting}
+              className={`rounded-full ml-2 p-2 ${comment.trim() && !isSubmitting ? 'bg-black' : 'bg-transparent'}`}
             >
-              <Ionicons 
-                name="send" 
-                size={16} 
-                color={comment.trim() ? "white" : "#999999"} 
-              />
+              {isSubmitting ? (
+                <ActivityIndicator size={16} color="white" />
+              ) : (
+                <Ionicons 
+                  name="send" 
+                  size={16} 
+                  color={comment.trim() ? "white" : "#999999"} 
+                />
+              )}
             </Pressable>
           </View>
         </View>

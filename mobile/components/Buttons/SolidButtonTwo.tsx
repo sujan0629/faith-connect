@@ -1,13 +1,15 @@
-import { Pressable, Text, ViewStyle } from 'react-native'
+import { Pressable, Text, ViewStyle, ActivityIndicator } from 'react-native'
 
 interface Props {
   label: string
   onPress: () => void
   variant?: 'primary' | 'secondary' | 'ghost'
   style?: ViewStyle
+  loading?: boolean
+  disabled?: boolean
 }
 
-export const SolidButton = ({ label, onPress, variant = 'primary', style }: Props) => {
+export const SolidButton = ({ label, onPress, variant = 'primary', style, loading = false, disabled = false }: Props) => {
   const base = 'rounded-full px-6'
   const styles =
     variant === 'primary'
@@ -20,8 +22,12 @@ export const SolidButton = ({ label, onPress, variant = 'primary', style }: Prop
   const buttonStyle = { paddingVertical: 4, ...style }
 
   return (
-    <Pressable onPress={onPress} className={`${base} ${styles}`} style={buttonStyle}>
-      <Text className={`text-center text-sm font-semibold ${textStyles}`}>{label}</Text>
+    <Pressable onPress={disabled ? undefined : onPress} disabled={disabled} className={`${base} ${styles}`} style={buttonStyle}>
+      {loading ? (
+        <ActivityIndicator size="small" color={variant === 'primary' ? '#ffffff' : '#222'} />
+      ) : (
+        <Text className={`text-center text-sm font-semibold ${textStyles}`}>{label}</Text>
+      )}
     </Pressable>
   )
 }

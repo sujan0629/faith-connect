@@ -1,66 +1,54 @@
-import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent } from 'react-native'
+import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Text, Pressable } from 'react-native'
 import { useFeedStore } from '../../stores/feedStore'
+import { useAuthStore } from '../../stores/authStore'
 import { VideoView, useVideoPlayer, VideoPlayer } from 'expo-video'
-import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
+import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from 'expo-router'
 import { ReelHeader } from '../../components/Reel/ReelHeader'
 import { ReelActions } from '../../components/Reel/ReelActions'
 import { ReelUserInfo } from '../../components/Reel/ReelUserInfo'
 import { CreateReelModal } from '../../components/Feed/CreateReelModal'
-import { Comment } from '../posts/[id]'
+import { Comment } from '../../stores/commentStore'
+import { useFeedAlgorithm } from '../../hooks/useFeedAlgorithm'
+import { ReelSkeleton } from '@/components/Skeletons/ReelSkeleton'
+import { postsApi } from '../../api/posts'
+import { useOfflineStore } from '../../stores/offlineStore'
+import Ionicons from '@expo/vector-icons/Ionicons'
 
 const TAB_BAR_HEIGHT = 85
 
 export default function ReelsScreen() {
-  const { explore, toggleLike, toggleSave } = useFeedStore()
+  const { explore, reels: storeReels, toggleLike, toggleSave, setAuthorFaith } = useFeedStore()
+  const user = useAuthStore((s) => s.user)
   const { height: WINDOW_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window')
   const VISIBLE_HEIGHT = WINDOW_HEIGHT - TAB_BAR_HEIGHT
-  const reels = explore.filter((p) => p.type === 'reel')
   const router = useRouter()
+  const navigation = useNavigation()
   const { reelId } = useLocalSearchParams<{ reelId: string }>()
+
+  // Initialize feed algorithm for tracking watch events
+  const { trackView } = useFeedAlgorithm({
+    autoRank: true,
+    enableCaching: true,
+  })
+  
+  // Sort reels: clicked reel first, then rest sorted by time
+  const baseReels = storeReels
+  const reels = useMemo(() => {
+    return reelId 
+      ? (() => {
+          const clickedReel = baseReels.find(r => r.id === reelId)
+          return clickedReel 
+            ? [clickedReel, ...baseReels.filter(r => r.id !== reelId)]
+            : baseReels
+        })()
+      : baseReels
+  }, [reelId, baseReels])
   const [isMuted, setIsMuted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [createReelModalVisible, setCreateReelModalVisible] = useState(false)
 
-  const [reelComments, setReelComments] = useState<Record<string, Comment[]>>({
-    'p2': [
-      {
-        id: 'c1',
-        authorId: 'u1',
-        authorName: 'Sarah Johnson',
-        authorAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        text: 'Amazing perspective! This really captures the essence of community.',
-        likes: 24,
-        isLiked: false,
-        replies: 0,
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-      },
-      {
-        id: 'c2',
-        authorId: 'u2',
-        authorName: 'Michael Chen',
-        authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        text: 'Beautiful! The lighting in this video is incredible.',
-        likes: 12,
-        isLiked: true,
-        replies: 0,
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-      },
-    ],
-    'p4': [
-      {
-        id: 'c3',
-        authorId: 'u3',
-        authorName: 'Priya Patel',
-        authorAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-        text: 'This touched my heart. Faith communities like this are so important.',
-        likes: 45,
-        isLiked: false,
-        replies: 0,
-        createdAt: new Date(Date.now() - 1800000).toISOString(),
-      },
-    ],
-  })
+  const [reelComments, setReelComments] = useState<Record<string, Comment[]>>({})
 
   const scrollViewRef = useRef<ScrollView>(null)
   const isScreenFocused = useRef(true)
@@ -69,19 +57,32 @@ export default function ReelsScreen() {
   const hasInitialized = useRef(false)
   const previousReelIdRef = useRef<string | undefined>(undefined)
 
+  // Cleanup all video players on unmount
+  useEffect(() => {
+    return () => {
+      videoPlayers.current.forEach((player) => {
+        try {
+          player.pause()
+          player.release?.()
+        } catch (e) {
+          // Player might already be released
+        }
+      })
+      videoPlayers.current.clear()
+    }
+  }, [])
+
   useLayoutEffect(() => {
     if (reelId && reelId !== previousReelIdRef.current && reels.length > 0) {
       previousReelIdRef.current = reelId
       hasInitialized.current = true
-      const index = reels.findIndex((r) => r.id === reelId)
-      if (index !== -1) {
-        setCurrentIndex(index)
-        currentIndexRef.current = index
-        scrollViewRef.current?.scrollTo({
-          y: index * VISIBLE_HEIGHT,
-          animated: false,
-        })
-      }
+      // Clicked reel is now always at index 0 after reordering
+      setCurrentIndex(0)
+      currentIndexRef.current = 0
+      scrollViewRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      })
     }
   }, [reelId])
 
@@ -97,29 +98,49 @@ export default function ReelsScreen() {
     if (index !== currentIndexRef.current && index >= 0 && index < reels.length) {
       const prevReel = reels[currentIndexRef.current]
       if (prevReel && videoPlayers.current.has(prevReel.id)) {
-        videoPlayers.current.get(prevReel.id)?.pause()
+        const prevPlayer = videoPlayers.current.get(prevReel.id)
+        if (prevPlayer) {
+          prevPlayer.pause()
+        }
       }
       setCurrentIndex(index)
       currentIndexRef.current = index
       const newReel = reels[index]
       if (newReel && videoPlayers.current.has(newReel.id) && isScreenFocused.current) {
-        videoPlayers.current.get(newReel.id)?.play()
+        const newPlayer = videoPlayers.current.get(newReel.id)
+        if (newPlayer) {
+          newPlayer.play()
+        }
       }
     }
-  }, [reels])
+  }, [reels, VISIBLE_HEIGHT])
 
   useFocusEffect(
     useCallback(() => {
       isScreenFocused.current = true
+      // Use ref to get current reel without adding reels to dependencies
       const currentReel = reels[currentIndex]
       if (currentReel && videoPlayers.current.has(currentReel.id)) {
-        videoPlayers.current.get(currentReel.id)?.play()
+        const player = videoPlayers.current.get(currentReel.id)
+        if (player) {
+          player.play()
+          // Track view event when reel starts playing
+          if (user?.id) {
+            trackView(currentReel.id, currentReel.faith)
+          }
+        }
       }
       return () => {
         isScreenFocused.current = false
-        videoPlayers.current.forEach(player => player.pause())
+        videoPlayers.current.forEach(player => {
+          try {
+            player.pause()
+          } catch (error) {
+            // Player might be invalidated, ignore
+          }
+        })
       }
-    }, [currentIndex, reels])
+    }, [currentIndex, user?.id, trackView])
   )
 
   const onLikeComment = useCallback((commentId: string) => {
@@ -154,19 +175,45 @@ export default function ReelsScreen() {
     }))
   }, [])
 
-  if (reels.length === 0) {
-    return (
-      <View className="flex-1 bg-black items-center justify-center">
-        <View className="text-white">No reels available</View>
-      </View>
-    )
-  }
+  // Cleanup old players from map to prevent unbounded growth
+  useEffect(() => {
+    // Only cleanup if reels array length changed significantly
+    if (reels.length > 0) {
+      const currentReelIds = new Set(reels.map(r => r.id))
+      const playerIds = Array.from(videoPlayers.current.keys())
+      
+      // Only cleanup players that are no longer in the reel list
+      playerIds.forEach(playerId => {
+        if (!currentReelIds.has(playerId)) {
+          const player = videoPlayers.current.get(playerId)
+          if (player) {
+            try {
+              player.pause()
+              player.release?.()
+            } catch (e) {
+              // Already released
+            }
+            videoPlayers.current.delete(playerId)
+          }
+        }
+      })
+    }
+  }, [reels.length])
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
         <ReelHeader 
-          onBack={() => router.back()} 
+          onBack={() => {
+            // If from profile, go back to profile. Otherwise just stay on reels tab
+            if (reelId) {
+              // User came from a profile/deep link, allow back
+              router.back()
+            } else {
+              // User is on reels tab normally, don't navigate away
+              // Just clear the player state if needed
+            }
+          }}
           onCreateReelPress={() => setCreateReelModalVisible(true)}
         />
       </View>
@@ -178,7 +225,7 @@ export default function ReelsScreen() {
         showsVerticalScrollIndicator={false}
         decelerationRate="fast"
       >
-        {reels.map((reel, index) => (
+        {reels.length > 0 ? reels.map((reel, index) => (
           <ReelItem
             key={reel.id}
             reel={reel}
@@ -195,6 +242,12 @@ export default function ReelsScreen() {
             reelComments={reelComments}
             onLikeComment={onLikeComment}
             onAddComment={onAddComment}
+          />
+        )) : [1, 2, 3].map((i) => (
+          <ReelSkeleton
+            key={i}
+            screenHeight={VISIBLE_HEIGHT}
+            screenWidth={SCREEN_WIDTH}
           />
         ))}
       </ScrollView>
@@ -237,28 +290,168 @@ const ReelItem = React.memo(({
   onLikeComment: (commentId: string) => void
   onAddComment: (reelId: string, text: string) => void
 }) => {
+  const [localMuted, setLocalMuted] = useState(false)
+  const [showMuteIcon, setShowMuteIcon] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const muteIconTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  
   const player = useVideoPlayer(reel.media || '', (player) => {
     player.loop = true
-    player.muted = isMuted
+    player.muted = localMuted || isMuted
     onPlayerReady(player)
   })
 
+  // Watch time tracking
+  const watchTimeRef = useRef(0)
+  const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isOffline = useOfflineStore((state) => state.isOffline)
+
   useEffect(() => {
     if (isActive && isScreenFocused) {
-      player.play()
+      if (!isPaused) {
+        player.play()
+      }
     } else {
       player.pause()
     }
-  }, [isActive, isScreenFocused, player])
+  }, [isActive, isScreenFocused, player, isPaused])
+
+  // Update player mute state when localMuted changes
+  useEffect(() => {
+    if (player) {
+      player.muted = localMuted || isMuted
+    }
+  }, [localMuted, isMuted, player])
+
+  // Track watch time every 500ms when reel is active
+  useEffect(() => {
+    if (!isActive || !isScreenFocused) return
+
+    const trackInterval = setInterval(() => {
+      watchTimeRef.current += 0.5 // 500ms = 0.5 seconds
+    }, 500)
+
+    return () => clearInterval(trackInterval)
+  }, [isActive, isScreenFocused])
+
+  // Batch send watch events every 2 seconds
+  useEffect(() => {
+    if (!isActive || !isScreenFocused) {
+      // Clear any pending batch send
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current)
+      }
+      return
+    }
+
+    batchTimeoutRef.current = setInterval(async () => {
+      if (watchTimeRef.current > 0) {
+        try {
+          const videoDuration = reel.videoDuration || 0
+          const completed = videoDuration > 0 && watchTimeRef.current >= videoDuration
+          
+          await postsApi.trackWatch(reel.id, watchTimeRef.current, videoDuration)
+          watchTimeRef.current = 0
+        } catch (error) {
+          console.error('Failed to track watch time:', error)
+          
+          // Queue watch event if offline
+          if (isOffline) {
+            const { addToQueue } = useOfflineStore.getState()
+            addToQueue({
+              type: 'like',
+              postId: reel.id,
+              payload: {},
+            })
+            watchTimeRef.current = 0
+          }
+        }
+      }
+    }, 2000)
+
+    return () => {
+      if (batchTimeoutRef.current) {
+        clearInterval(batchTimeoutRef.current)
+      }
+    }
+  }, [isActive, isScreenFocused, reel.id, reel.videoDuration, isOffline])
+
+  // Cleanup player on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        player.pause()
+        player.release?.()
+      } catch (e) {
+        // Already released
+      }
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current)
+      }
+      if (muteIconTimeoutRef.current) {
+        clearTimeout(muteIconTimeoutRef.current)
+      }
+    }
+  }, [player])
 
   return (
     <View style={{ height: screenHeight, width: screenWidth }}>
-      <VideoView
+      <Pressable
         style={{ flex: 1, width: '100%', height: '100%' }}
-        player={player}
-        contentFit="cover"
-        nativeControls={false}
-      />
+        onPress={() => {
+          // Toggle mute on tap
+          setLocalMuted(prev => !prev)
+          setShowMuteIcon(true)
+          
+          // Clear previous timeout
+          if (muteIconTimeoutRef.current) {
+            clearTimeout(muteIconTimeoutRef.current)
+          }
+          
+          // Hide mute icon after 1 second
+          muteIconTimeoutRef.current = setTimeout(() => {
+            setShowMuteIcon(false)
+          }, 1000)
+        }}
+        onLongPress={() => {
+          // Pause on long press
+          player.pause()
+          setIsPaused(true)
+        }}
+        onPressOut={() => {
+          // Resume on release if was paused by long press
+          if (isPaused && isActive && isScreenFocused) {
+            player.play()
+            setIsPaused(false)
+          }
+        }}
+        delayLongPress={300}
+      >
+        <VideoView
+          style={{ flex: 1, width: '100%', height: '100%' }}
+          player={player}
+          contentFit="cover"
+          nativeControls={false}
+        />
+        
+        {/* Mute Icon Overlay */}
+        {showMuteIcon && (
+          <View style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            marginLeft: -24,
+            marginTop: -24,
+            zIndex: 15
+          }}>
+            <Ionicons
+              name={localMuted ? "volume-mute" : "volume-high"}
+              size={48}
+              color="white"
+            />
+          </View>
+        )}
+      </Pressable>
       
       <View style={{ 
         position: 'absolute', 
@@ -266,7 +459,7 @@ const ReelItem = React.memo(({
         right: 2,
         zIndex: 20 
       }}>
-        <ReelActions
+      <ReelActions
           reel={{
             id: reel.id,
             likes: reel.likes || 0,
@@ -274,12 +467,17 @@ const ReelItem = React.memo(({
             comments: reel.comments || 0,
             saves: reel.saves || 0,
             isSaved: reel.isSaved,
+            reposts: reel.reposts || 0,
+            isReposted: reel.isReposted,
           }}
           onLikePress={onLikePress}
           onSavePress={onSavePress}
           comments={reelComments[reel.id] || []}
           onLikeComment={onLikeComment}
           onAddComment={(text: string) => onAddComment(reel.id, text)}
+          authorId={reel.authorId}
+          authorName={reel.authorName}
+          authorAvatar={reel.authorAvatar}
         />
       </View>
 
@@ -293,6 +491,7 @@ const ReelItem = React.memo(({
         <ReelUserInfo
           reel={{
             id: reel.id,
+            authorId: reel.authorId,
             authorName: reel.authorName || 'Unknown',
             authorAvatar: reel.authorAvatar,
             body: reel.body || '',

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { View, Text, FlatList, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { 
@@ -22,7 +22,7 @@ export default function ChatThread() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   
-  const { threads, messages, sendMessage } = useChatStore()
+  const { threads, messages, sendMessage, fetchThreads, fetchMessages } = useChatStore()
   const user = useAuthStore((s) => s.user)
   
   const thread = threads.find((t) => t.id === threadId)
@@ -57,27 +57,36 @@ export default function ChatThread() {
     };
   });
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!user) {
       Toast.show({ type: 'error', text1: 'Sign in first' })
       return
     }
     if (!content.trim()) return
-    
-    sendMessage(threadId!, {
-      threadId: threadId!,
-      senderId: user.id,
-      senderName: user.name,
-      content: content.trim(),
-      isMine: true,
-    })
-    
-    setContent('')
-    
-    setTimeout(() => {
-      flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
-    }, 100)
+    try {
+      if (!threadId) return
+      await sendMessage(threadId, content.trim())
+      setContent('')
+      setTimeout(() => {
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+      }, 100)
+    } catch (err: any) {
+      Toast.show({ type: 'error', text1: 'Failed to send', text2: err?.response?.data?.message || 'Please try again' })
+    }
   }
+
+  useEffect(() => {
+    fetchThreads().catch(() => {
+      Toast.show({ type: 'error', text1: 'Failed to load thread' })
+    })
+  }, [fetchThreads])
+
+  useEffect(() => {
+    if (!threadId) return
+    fetchMessages(threadId).catch(() => {
+      Toast.show({ type: 'error', text1: 'Failed to load messages' })
+    })
+  }, [threadId, fetchMessages])
 
   if (!thread) {
     return (
@@ -121,6 +130,7 @@ export default function ChatThread() {
               isMine={m.isMine || false}
               senderName={!m.isMine ? m.senderName : undefined}
               avatar={!m.isMine ? thread?.avatar : undefined}
+              status={m.status}
             />
           )}
           maintainVisibleContentPosition={{ minIndexForVisible: 0 }}

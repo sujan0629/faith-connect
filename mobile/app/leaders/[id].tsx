@@ -35,7 +35,7 @@ export default function LeaderProfile() {
 
   return (
     <ScrollView className="flex-1 bg-[#050914]" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <TopBar title={leader.name} subtitle={leader.faith} onBack={() => router.back()} />
+      <TopBar title={leader.name ?? ''} subtitle={leader.faith ?? ''} onBack={() => router.back()} />
 
       <View className="rounded-3xl border border-white/10 bg-white/5 p-4">
         <Text className="text-sm text-cyan-300">{leader.faith}</Text>

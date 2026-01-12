@@ -1,14 +1,15 @@
 import { View, Text } from 'react-native'
 import { CommentItem } from './CommentItem'
-import { Comment } from '../../app/posts/[id]'
+import { Comment } from '../../stores/commentStore'
 
 interface Props {
   comments: Comment[]
-  onLikeComment: (id: string) => void
+  onLikeComment: (commentId: string, postId: string) => void
   onReplyComment?: (id: string) => void
+  postId: string
 }
 
-export const CommentsList = ({ comments, onLikeComment, onReplyComment }: Props) => {
+export const CommentsList = ({ comments, onLikeComment, onReplyComment, postId }: Props) => {
   return (
     <View className="bg-white">
       <View className="px-4 py-3">
@@ -20,6 +21,7 @@ export const CommentsList = ({ comments, onLikeComment, onReplyComment }: Props)
           comment={comment}
           onLike={onLikeComment}
           onReply={onReplyComment}
+          postId={postId}
         />
       ))}
     </View>

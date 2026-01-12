@@ -1,10 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.175:3000/api'
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.175:3000/api' 
 
 export const api = axios.create({
 	baseURL: API_URL,
-	timeout: 15000,
+	timeout: 30000, // 30 seconds for general requests
 })
 
 let accessToken: string | null = null
@@ -67,7 +67,17 @@ api.interceptors.response.use(
 
 			try {
 				const { useAuthStore } = await import('../stores/authStore')
-				const refreshToken = useAuthStore.getState().refreshToken
+				const authState = useAuthStore.getState()
+				const refreshToken = authState.refreshToken
+
+				console.log('[Axios Interceptor] Attempting token refresh...')
+				console.log('[Axios Interceptor] Refresh token available:', !!refreshToken)
+				console.log('[Axios Interceptor] Auth state:', { 
+					hasUser: !!authState.user, 
+					hasAccessToken: !!authState.accessToken, 
+					hasRefreshToken: !!refreshToken,
+					isAuthenticated: authState.isAuthenticated 
+				})
 
 				if (!refreshToken) {
 					throw new Error('No refresh token available')

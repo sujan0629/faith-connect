@@ -1,32 +1,49 @@
 import { View, Text, Image, Pressable, TouchableOpacity } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { Comment } from '../../app/posts/[id]'
+import { Comment } from '../../stores/commentStore'
 import { useState } from 'react'
+import Toast from 'react-native-toast-message'
+import { CommentActionModal } from './CommentActionModal'
+import { ReportModal } from '../Moderation/ReportModal'
+import { BlockUserModal } from '../Moderation/BlockUserModal'
 
 interface Props {
   comment: Comment
-  onLike: (id: string) => void
+  onLike: (commentId: string, postId: string) => void
   onReply?: (id: string) => void
   isReply?: boolean
   depth?: number
+  postId: string
 }
 
 const maxDepth = 5
 
-export const CommentItem = ({ comment, onLike, onReply, isReply = false, depth = 0 }: Props) => {
+export const CommentItem = ({ comment, onLike, onReply, isReply = false, depth = 0, postId }: Props) => {
   const [hasLiked, setHasLiked] = useState(comment.isLiked)
   const [likesCount, setLikesCount] = useState(comment.likes)
   const [showReplies, setShowReplies] = useState(depth < maxDepth && comment.replies > 0)
+  const [showActionMenu, setShowActionMenu] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [showBlockModal, setShowBlockModal] = useState(false)
 
-  const handleLike = () => {
-    if (hasLiked) {
-      setLikesCount(likesCount - 1)
-      setHasLiked(false)
-    } else {
-      setLikesCount(likesCount + 1)
-      setHasLiked(true)
+  const handleLike = async () => {
+    try {
+      const newLikedState = !hasLiked
+      setHasLiked(newLikedState)
+      setLikesCount(newLikedState ? likesCount + 1 : likesCount - 1)
+      
+      // Call parent handler which will call API
+      onLike(comment.id, postId)
+    } catch (error) {
+      console.warn('Failed to like comment:', error)
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to like comment',
+      })
+      // Revert state
+      setHasLiked(!hasLiked)
+      setLikesCount(hasLiked ? likesCount + 1 : likesCount - 1)
     }
-    onLike(comment.id)
   }
 
   const formatDate = (dateString: string) => {
@@ -75,7 +92,7 @@ export const CommentItem = ({ comment, onLike, onReply, isReply = false, depth =
           </Pressable>
           <Text className="text-gray-400 text-xs">{formatDate(comment.createdAt)}</Text>
         </View>
-        <Pressable>
+        <Pressable onPress={() => setShowActionMenu(true)}>
           <MaterialIcons name="more-horiz" size={24} color="#666666" />
         </Pressable>
       </View>
@@ -114,7 +131,7 @@ export const CommentItem = ({ comment, onLike, onReply, isReply = false, depth =
       {/* Nested replies */}
       {comment.repliesData && comment.repliesData.length > 0 && showReplies && (
         <View>
-          {comment.repliesData.map((reply) => (
+          {comment.repliesData.map((reply: any) => (
             <CommentItem
               key={reply.id}
               comment={reply}
@@ -122,10 +139,41 @@ export const CommentItem = ({ comment, onLike, onReply, isReply = false, depth =
               onReply={onReply}
               isReply={true}
               depth={depth + 1}
+              postId={postId}
             />
           ))}
         </View>
       )}
+
+      {/* Action Modals */}
+      <CommentActionModal
+        visible={showActionMenu}
+        onClose={() => setShowActionMenu(false)}
+        onReport={() => {
+          setShowActionMenu(false)
+          setShowReportModal(true)
+        }}
+        onBlock={() => {
+          setShowActionMenu(false)
+          setShowBlockModal(true)
+        }}
+      />
+
+      <ReportModal
+        visible={showReportModal}
+        contentId={postId}
+        contentType="post"
+        onClose={() => setShowReportModal(false)}
+      />
+
+      <BlockUserModal
+        visible={showBlockModal}
+        userId={comment.authorId}
+        userName={comment.authorName}
+        userAvatar={comment.authorAvatar}
+        isBlocked={false}
+        onClose={() => setShowBlockModal(false)}
+      />
     </View>
   )
 }

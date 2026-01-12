@@ -1,13 +1,16 @@
 import { create } from 'zustand'
+import { messagesApi } from '../api/messages'
+import { useAuthStore } from './authStore'
 
 export type Message = {
   id: string
   threadId: string
   senderId: string
-  senderName: string
+  senderName?: string
   content: string
   createdAt: string
   isMine?: boolean
+  status?: 'sending' | 'sent' | 'failed'
 }
 
 type Thread = {
@@ -19,87 +22,98 @@ type Thread = {
   avatar?: string
   isActive: boolean
   timestamp: Date
+  peerRole?: string
 }
 
 type ChatState = {
   threads: Thread[]
   messages: Record<string, Message[]>
-  sendMessage: (threadId: string, payload: Omit<Message, 'id' | 'createdAt'>) => void
-  seed: () => void
-}
-
-const seedThreads: Thread[] = [
-  {
-    id: 't1',
-    peerId: 'l1',
-    peerName: 'Pastor Grace',
-    lastMessage: 'Thank you for the guidance.',
-    unread: 1,
-    avatar: 'https://plus.unsplash.com/premium_photo-1689530775582-83b8abdb5020?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cmFuZG9tJTIwcGVyc29ufGVufDB8fDB8fHww',
-    isActive: false,
-    timestamp: new Date(),
-  },
-  {
-    id: 't2',
-    peerId: 'l2',
-    peerName: 'Imam Kareem',
-    lastMessage: 'When is the next session?',
-    unread: 0,
-    avatar: 'https://miro.medium.com/v2/resize:fit:1400/1*zurzWYgv6-4L123HBwzsKA.jpeg',
-    isActive: false,
-    timestamp: new Date(),
-  },
-]
-
-const seedMessages: Record<string, Message[]> = {
-  t1: [
-    {
-      id: 'm1',
-      threadId: 't1',
-      senderId: 'l1',
-      senderName: 'Pastor Grace',
-      content: 'Stay hopeful and kind today.',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 'm2',
-      threadId: 't1',
-      senderId: 'me',
-      senderName: 'You',
-      content: 'Thank you for the guidance.',
-      createdAt: new Date().toISOString(),
-      isMine: true,
-    },
-  ],
-  t2: [
-    {
-      id: 'm3',
-      threadId: 't2',
-      senderId: 'l2',
-      senderName: 'Imam Kareem',
-      content: 'Remember patience brings clarity.',
-      createdAt: new Date().toISOString(),
-    },
-  ],
+  fetchThreads: () => Promise<void>
+  fetchMessages: (threadId: string) => Promise<void>
+  createThread: (peerId: string) => Promise<string>
+  sendMessage: (threadId: string, content: string) => Promise<void>
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
-  threads: seedThreads,
-  messages: seedMessages,
-  sendMessage: (threadId, payload) =>
+  threads: [],
+  messages: {},
+
+  fetchThreads: async () => {
+    const data = await messagesApi.listThreads()
+    const normalized: Thread[] = data.map((t) => ({
+      ...t,
+      timestamp: new Date(t.timestamp),
+    }))
+    set({ threads: normalized })
+  },
+
+  fetchMessages: async (threadId: string) => {
+    const data = await messagesApi.getMessages(threadId)
+    const userId = useAuthStore.getState().user?.id
+    const normalized: Message[] = data.map((m) => ({
+      ...m,
+      isMine: m.senderId === userId,
+      createdAt: typeof m.createdAt === 'string' ? m.createdAt : new Date(m.createdAt as any).toISOString(),
+    }))
+    set((state) => ({
+      messages: { ...state.messages, [threadId]: normalized },
+      threads: state.threads.map((t) => (t.id === threadId ? { ...t, unread: 0 } : t)),
+    }))
+  },
+
+  createThread: async (peerId: string) => {
+    const res = await messagesApi.createThread(peerId)
+    await get().fetchThreads()
+    return res.id
+  },
+
+  sendMessage: async (threadId: string, content: string) => {
+    const userId = useAuthStore.getState().user?.id
+    const tempId = `temp-${Date.now()}` // temporary id for the sending message
+    const tempMessage: Message = {
+      id: tempId,
+      threadId,
+      senderId: userId || '',
+      senderName: useAuthStore.getState().user?.name,
+      content,
+      createdAt: new Date().toISOString(),
+      isMine: true,
+      status: 'sending',
+    }
+
+    // Add the message instantly
     set((state) => {
-      const message = {
-        ...payload,
-        id: `msg-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-      }
       const existing = state.messages[threadId] || []
-      // Add new message at the beginning since FlatList is inverted
-      const updatedMessages = { ...state.messages, [threadId]: [message, ...existing] }
+      const updatedMessages = { ...state.messages, [threadId]: [tempMessage, ...existing] }
       const updatedThreads = state.threads.map((t) =>
-        t.id === threadId ? { ...t, lastMessage: payload.content, unread: 0 } : t,
+        t.id === threadId ? { ...t, lastMessage: content, unread: 0, timestamp: new Date() } : t,
       )
       return { messages: updatedMessages, threads: updatedThreads }
-    }),
-  seed: () => set({ threads: seedThreads, messages: seedMessages }),
+    })
+
+    try {
+      const message = await messagesApi.sendMessage(threadId, content)
+      const normalized: Message = {
+        ...message,
+        isMine: message.senderId === userId,
+        createdAt: typeof message.createdAt === 'string' ? message.createdAt : new Date(message.createdAt as any).toISOString(),
+        status: 'sent',
+      }
+
+      // Replace the temp message with the real one
+      set((state) => {
+        const existing = state.messages[threadId] || []
+        const updatedMessages = { ...state.messages, [threadId]: existing.map((m) => m.id === tempId ? normalized : m) }
+        return { messages: updatedMessages }
+      })
+    } catch (error) {
+      // Mark as failed
+      set((state) => {
+        const existing = state.messages[threadId] || []
+        const updatedMessages = { ...state.messages, [threadId]: existing.map((m) => m.id === tempId ? { ...m, status: 'failed' as const } : m) }
+        return { messages: updatedMessages }
+      })
+      throw error
+    }
+  },
 }))

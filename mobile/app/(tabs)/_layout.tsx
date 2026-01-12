@@ -30,22 +30,34 @@ export default function TabsLayout() {
 
   const handlePost = (content: string) => {
     const newPost = {
-      authorId: user?.id || '1',
-      authorName: user?.name || 'Leader Name',
-      authorAvatar: user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+      id: `post_${Date.now()}`,
+      authorId: user?.id || '',
+      authorName: user?.name || '',
+      authorAvatar: user?.avatar,
+      faith: user?.faith,
       type: 'post' as const,
       title: '',
       body: content,
       media: undefined,
       mediaType: 'none' as const,
+      likes: 0,
       isLiked: false,
+      saves: 0,
       isSaved: false,
+      reposts: 0,
+      isReposted: false,
+      comments: 0,
+      impressions: 0,
+      avgWatchTime: 0,
+      completionRate: 0,
+      replayCount: 0,
+      createdAt: new Date().toISOString(),
     }
 
     addPost(newPost)
     closeModal()
   }
-
+  
   return (
     <>
       <Tabs

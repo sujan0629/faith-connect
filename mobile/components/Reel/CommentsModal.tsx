@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Comment } from '../../app/posts/[id]'
+import { Comment, useCommentStore } from '../../stores/commentStore'
 import { KeyboardStickyView } from 'react-native-keyboard-controller' // Import this
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -34,13 +34,24 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [commentText, setCommentText] = useState('')
   const insets = useSafeAreaInsets()
+  const fetchComments = useCommentStore((s) => s.fetchComments)
+  const commentsByPost = useCommentStore((s) => s.commentsByPost)
+  const addComment = useCommentStore((s) => s.addComment)
+  const toggleCommentLike = useCommentStore((s) => s.toggleCommentLike)
+
+  const storeComments = reelId ? (commentsByPost[reelId] || []) : []
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return
     
     setIsSubmitting(true)
     try {
-      await onAddComment(commentText.trim())
+      // Prefer store-based add so it behaves like other comment UIs
+      if (reelId) {
+        await addComment(reelId, commentText.trim())
+      } else {
+        await onAddComment(commentText.trim())
+      }
       setCommentText('')
     } finally {
       setIsSubmitting(false)
@@ -94,7 +105,12 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
       <Pressable
         onPress={(e) => {
           e.stopPropagation();
-          onLikeComment(comment.id);
+          // Prefer store toggle if reelId provided
+          if (reelId) {
+            toggleCommentLike(reelId, comment.id).catch(err => console.warn('Like error:', err))
+          } else {
+            onLikeComment(comment.id)
+          }
         }}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         className="ml-2 p-1"
@@ -129,7 +145,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
           {/* Header */}
           <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
             <Text className="text-lg font-semibold text-gray-900">
-              Comments ({comments.length})
+              Comments ({storeComments.length > 0 ? storeComments.length : comments.length})
             </Text>
             <Pressable onPress={onClose} className="p-2">
               <Ionicons name="close" size={24} color="#666" />
@@ -142,15 +158,16 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
              showsVerticalScrollIndicator={false}
              keyboardShouldPersistTaps="handled"
           >
-            {comments.length === 0 ? (
+            {(storeComments.length === 0) && (comments.length === 0) ? (
               <View className="flex-1 items-center justify-center py-12">
                 <Ionicons name="chatbubble-outline" size={48} color="#ccc" />
-                <Text className="text-gray-500 text-center mt-4 px-8">
+                <Text className="text-gray-500 text-center text-sm mt-4 px-8">
                   No comments yet. Be the first to comment!
                 </Text>
               </View>
             ) : (
-              comments.map((comment) => (
+              // Prefer storeComments when available so likes/adds reflect instantly
+              (storeComments.length > 0 ? storeComments : comments).map((comment) => (
                 <CommentItem key={comment.id} comment={comment} />
               ))
             )}

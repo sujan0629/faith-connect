@@ -44,7 +44,22 @@ export default function MagicLoginScreen() {
           console.log('[MagicLogin] Calling /auth/verify-magic');
           const { data } = await api.post("/auth/verify-magic", { token, email, code });
           console.log('[MagicLogin] Success response:', data);
-          setAuth({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+          console.log('[MagicLogin] Tokens - accessToken:', data.accessToken ? 'present' : 'missing', ', refreshToken:', data.refreshToken ? 'present' : 'missing');
+          
+          if (!data.accessToken || !data.refreshToken) {
+            console.error('[MagicLogin] Missing tokens in response:', data);
+            setStatus("Server error: tokens not returned. Please try again.");
+            setIsLoading(false);
+            return;
+          }
+          
+          // Store auth data before navigating
+          await setAuth({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken });
+          
+          // Small delay to ensure store is updated
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          console.log('[MagicLogin] Auth stored, navigating...');
           router.replace(data.user?.hasProfile ? "/(tabs)/home" : "/onboarding/profile");
           setTimeout(() => {
             Toast.show({ type: "success", text1: "Signed in", text2: "Welcome back" });
@@ -66,7 +81,7 @@ export default function MagicLoginScreen() {
     <View className="flex-1 items-center justify-center bg-white px-6">
       {isLoading ? (
         <>
-          <ActivityIndicator size="large" color="#1C555E" />
+          <ActivityIndicator size="large" color="#111" />
           <Text className="mt-4 text-sm text-gray-700">{status}</Text>
         </>
       ) : (

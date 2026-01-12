@@ -6,13 +6,16 @@ interface MessageBubbleProps {
   isMine: boolean
   senderName?: string
   avatar?: string
+  status?: 'sending' | 'sent' | 'failed'
 }
 
-export const MessageBubble = ({ content, timestamp, isMine, senderName, avatar }: MessageBubbleProps) => {
+export const MessageBubble = ({ content, timestamp, isMine, senderName, avatar, status }: MessageBubbleProps) => {
   const formattedTime = new Date(timestamp).toLocaleTimeString([], { 
     hour: '2-digit', 
     minute: '2-digit' 
   })
+
+  const statusText = status === 'sending' ? 'sending...' : status === 'failed' ? 'failed' : status === 'sent' ? '✓' : ''
 
   return (
     <View className={`mb-3 ${isMine ? 'items-end' : 'items-start'}`}>
@@ -45,7 +48,7 @@ export const MessageBubble = ({ content, timestamp, isMine, senderName, avatar }
             </Text>
           </View>
           <Text className="mt-1 text-xs text-[#999999] mr-2">
-            {formattedTime}
+            {formattedTime} {statusText}
           </Text>
         </View>
       )}

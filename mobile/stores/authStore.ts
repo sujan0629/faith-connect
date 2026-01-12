@@ -61,13 +61,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 			const stored = await AsyncStorage.getItem('auth')
 			if (stored) {
 				const parsed = JSON.parse(stored)
-				if (parsed.accessToken && parsed.user) {
+				if (parsed.accessToken && parsed.refreshToken && parsed.user) {
 					setAccessToken(parsed.accessToken)
-					set({ ...parsed, isAuthenticated: true, isHydrated: true })
+					set({ 
+						user: parsed.user,
+						accessToken: parsed.accessToken,
+						refreshToken: parsed.refreshToken,
+						rolePreference: parsed.rolePreference || 'worshiper',
+						isAuthenticated: true, 
+						isHydrated: true 
+					})
 					return
 				}
 			}
-		} catch {}
+		} catch (error) {
+			console.error('[AuthStore] Hydration error:', error)
+		}
 		set({ isHydrated: true })
 	},
 }))

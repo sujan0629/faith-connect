@@ -11,16 +11,12 @@ interface ProfileHeaderProps {
   isOwnProfile?: boolean
   isLeader?: boolean
   postsCount: number
+  repostsCount?: number
   followersCount: number
   followingCount: number
   onPostsPress?: () => void
   onFollowersPress?: () => void
   onFollowingPress?: () => void
-  onEditProfile?: () => void
-  onShareProfile?: () => void
-  onContact?: () => void
-  onFollow?: () => void
-  onMessage?: () => void
 }
 
 const formatCount = (num: number): string => {
@@ -39,17 +35,17 @@ export const ProfileHeader = ({
   isOwnProfile = false,
   isLeader = false,
   postsCount,
+  repostsCount = 0,
   followersCount,
   followingCount,
   onPostsPress,
   onFollowersPress,
   onFollowingPress,
-  onEditProfile,
-  onShareProfile,
-  onContact,
-  onFollow,
-  onMessage,
 }: ProfileHeaderProps) => {
+  const isWorshiper = role === 'worshiper'
+  const contentCount = isWorshiper ? repostsCount : postsCount
+  const contentLabel = isWorshiper ? 'Reposts' : 'Posts'
+
   return (
     <View className="bg-white px-4 py-6">
       {/* Avatar - Centered */}
@@ -74,7 +70,7 @@ export const ProfileHeader = ({
           {faith && (
             <View className="mt-2 flex-row items-center gap-2 justify-center">
               <Text className="text-sm text-gray-600 font-medium">{faith}</Text>
-              <Text className={`text-sm font-medium ${isLeader ? 'text-blue-600' : 'text-gray-500'}`}>
+              <Text className={`text-sm font-medium ${isLeader ? 'text-gray-600' : 'text-gray-500'}`}>
                 • {isLeader ? 'Leader' : 'Worshipper'}
               </Text>
             </View>
@@ -84,12 +80,12 @@ export const ProfileHeader = ({
 
       {/* Stats Grid - 3 Columns with Separators */}
       <View className="flex-row items-center justify-center mt-5 mb-3">
-        {/* Posts */}
+        {/* Posts/Reposts */}
         <Pressable onPress={onPostsPress} className="flex-1 items-center border-r border-gray-200 pr-2">
           <Text className="text-base font-bold text-gray-900">
-            {formatCount(postsCount)}
+            {formatCount(contentCount)}
           </Text>
-          <Text className="text-[11px] text-gray-600 mt-0.5">Posts</Text>
+          <Text className="text-[11px] text-gray-600 mt-0.5">{contentLabel}</Text>
         </Pressable>
 
         {/* Followers */}
@@ -107,35 +103,6 @@ export const ProfileHeader = ({
           </Text>
           <Text className="text-[11px] text-gray-600 mt-0.5">Following</Text>
         </Pressable>
-      </View>
-
-      {/* Action Buttons */}
-      <View className="flex-row justify-center gap-3 mt-4">
-        {isOwnProfile ? (
-          <>
-            <Pressable onPress={onEditProfile} className="bg-gray-100 px-4 py-2 rounded-lg">
-              <Text className="text-sm font-semibold text-gray-900">Edit Profile</Text>
-            </Pressable>
-            <Pressable onPress={onShareProfile} className="bg-gray-100 px-4 py-2 rounded-lg">
-              <Text className="text-sm font-semibold text-gray-900">Share Profile</Text>
-            </Pressable>
-            <Pressable onPress={onContact} className="bg-gray-100 px-4 py-2 rounded-lg">
-              <Text className="text-sm font-semibold text-gray-900">Contact</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <Pressable onPress={onFollow} className="bg-blue-500 px-4 py-2 rounded-lg">
-              <Text className="text-sm font-semibold text-white">Follow</Text>
-            </Pressable>
-            <Pressable onPress={onMessage} className="bg-gray-100 px-4 py-2 rounded-lg">
-              <Text className="text-sm font-semibold text-gray-900">Message</Text>
-            </Pressable>
-            <Pressable onPress={onShareProfile} className="bg-gray-100 px-4 py-2 rounded-lg">
-              <Text className="text-sm font-semibold text-gray-900">Share Profile</Text>
-            </Pressable>
-          </>
-        )}
       </View>
     </View>
   )

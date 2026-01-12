@@ -9,6 +9,7 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { FontAwesome6, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { SolidButton } from "../Buttons/SolidButtonTwo";
@@ -27,7 +28,10 @@ import Animated, {
 } from "react-native-reanimated";
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
+import Toast from 'react-native-toast-message';
 import { CreateReelModal } from './CreateReelModal';
+import { postsApi } from '../../api/posts';
+import { uploadsApi } from '../../api/uploads';
 
 interface CreatePostModalProps {
   visible: boolean;
@@ -51,7 +55,9 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [showCreateReelModal, setShowCreateReelModal] = useState(false);
   const [loadingImage, setLoadingImage] = useState(false);
   const [loadingVideo, setLoadingVideo] = useState(false);
-
+  const [isPosting, setIsPosting] = useState(false);
+  const [videoData, setVideoData] = useState<{ uri: string; duration: number } | null>(null);
+  const [selectedImageMimeType, setSelectedImageMimeType] = useState<string>('image/jpeg')
   const textInputRef = useRef<TextInput>(null);
   const progress = useSharedValue(0);
   const mountedRef = useRef(true);
@@ -81,6 +87,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       setShowCreateReelModal(false);
       setLoadingImage(false);
       setLoadingVideo(false);
+      setSelectedImageMimeType('image/jpeg');
       setTimeout(() => textInputRef.current?.focus(), 300);
     }
     return () => {
@@ -111,6 +118,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
       if (!result.canceled && result.assets?.[0] && mountedRef.current) {
         console.log('Setting image:', result.assets[0].uri);
         setSelectedImage(result.assets[0].uri);
+        setSelectedImageMimeType(result.assets[0].mimeType || 'image/jpeg');
         setSelectedVideo(null);
         setVideoThumbnail(null);
       }
@@ -148,9 +156,11 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
         
         if (asset.duration && asset.duration < 60000) {
           setReelUri(asset.uri);
+          setVideoData({ uri: asset.uri, duration: Math.round(asset.duration / 1000) });
           setShowCreateReelModal(true);
         } else {
           setSelectedVideo(asset.uri);
+          setVideoData(asset.duration ? { uri: asset.uri, duration: Math.round(asset.duration / 1000) } : null);
           setSelectedImage(null);
           try {
             const { uri } = await VideoThumbnails.getThumbnailAsync(asset.uri, { time: 0 });
@@ -170,17 +180,111 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
     console.log('=== VIDEO PICK END ===');
   };
 
+  const handlePost = async () => {
+    if (!content.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Content required',
+        text2: 'Please add a title or caption',
+      });
+      return;
+    }
+
+    setIsPosting(true);
+    try {
+      // Normal post (text or text + image)
+      if (selectedImage && !selectedVideo) {
+        console.log('Uploading image with MIME type:', selectedImageMimeType);
+        Toast.show({
+          type: 'info',
+          text1: 'Uploading image...',
+          text2: 'Please wait while we upload your image',
+        });
+        const uploadedImage = await uploadsApi.uploadFile(
+          selectedImage,
+          `post-${Date.now()}.${selectedImageMimeType.split('/')[1] || 'jpg'}`,
+          selectedImageMimeType,
+          'posts'
+        );
+        console.log('Image uploaded:', uploadedImage);
+        
+        Toast.show({
+          type: 'info',
+          text1: 'Creating post...',
+          text2: 'Almost done',
+        });
+        const createdPost = await postsApi.createPost(
+          'Post', // title
+          content,
+          uploadedImage.url,
+          uploadedImage.publicId
+        );
+        console.log('Created post response:', JSON.stringify(createdPost, null, 2));
+      }
+      // Video post (> 60 seconds)
+      else if (selectedVideo && videoData && videoData.duration > 60) {
+        const uploadedVideo = await uploadsApi.uploadFile(
+          selectedVideo,
+          `post-video-${Date.now()}.mp4`,
+          'video/mp4',
+          'posts'
+        );
+
+        await postsApi.createVideoPost(
+          'Video Post',
+          content,
+          uploadedVideo.url,
+          uploadedVideo.publicId,
+          videoData.duration
+        );
+      }
+      // Text-only post
+      else if (content.trim()) {
+        await postsApi.createPost('Post', content);
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Post published!', text2: ' Updating feed...',
+      });
+
+      onPost(content, selectedImage || selectedVideo);
+      onClose();
+    } catch (error: any) {
+      console.error('Post creation error:', error);
+      let errorMessage = 'Please try again'
+      
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage = 'Upload took too long. Please check your internet connection and try again.'
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to publish post',
+        text2: errorMessage,
+      });
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
   if (!visible) return null;
 
   return (
     <Modal 
       visible={visible} 
       animationType="slide" 
-      presentationStyle="pageSheet" 
+      presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'overFullScreen'}
+      transparent={Platform.OS === 'android'}
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View className="flex-1 bg-white">
+      <View className={`flex-1 ${Platform.OS === 'android' ? 'justify-end' : ''}`} style={Platform.OS === 'android' ? { backgroundColor: 'rgba(0,0,0,0.5)' } : {}}>
+        <View className="flex-1 bg-white" style={Platform.OS === 'android' ? { maxHeight: '95%', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' } : {}}>
         {/* Header */}
         <View className="px-4 pt-4 pb-3 border-b border-gray-100 bg-white">
           <View className="flex-row items-center justify-between">
@@ -191,9 +295,14 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <View className="w-20">
               <SolidButton
                 label="Post"
-                onPress={() => onPost(content, selectedImage || selectedVideo)}
+                onPress={handlePost}
                 variant="primary"
-                style={{ paddingVertical: 6, opacity: (content.trim() || selectedImage || selectedVideo) ? 1 : 0.4 }}
+                disabled={isPosting || !content.trim()}
+                loading={isPosting}
+                style={{ 
+                  paddingVertical: 6, 
+                  opacity: isPosting || !content.trim() ? 0.4 : 1 
+                }}
               />
             </View>
           </View>
@@ -325,11 +434,13 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({
           visible={showCreateReelModal} 
           onClose={() => setShowCreateReelModal(false)} 
           videoUri={reelUri} 
+          videoDuration={videoData?.duration}
           onPost={() => { 
             setShowCreateReelModal(false); 
             onClose(); 
           }} 
         />
+        </View>
       </View>
     </Modal>
   );

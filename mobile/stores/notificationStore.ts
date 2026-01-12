@@ -1,102 +1,125 @@
 import { create } from 'zustand'
+import { notificationsApi, NotificationResponse } from '../api/notifications'
+import Toast from 'react-native-toast-message'
 
-export type NotificationMention = {
-  type: 'mention' | 'comment'
-  id: string
-  authorId: string
-  authorName: string
-  authorAvatar: string
-  isVerified: boolean
-  comment: string
+export type Notification = NotificationResponse & {
+  comment?: string
   replyingTo?: string
-  createdAt: string
-  unread?: boolean
 }
-
-export type NotificationLike = {
-  type: 'like'
-  id: string
-  authorId: string
-  authorName: string
-  authorAvatar: string
-  isVerified: boolean
-  actionType: 'post' | 'comment' | 'reply'
-  createdAt: string
-  unread?: boolean
-}
-
-export type Notification = NotificationMention | NotificationLike
 
 type NotificationState = {
   items: Notification[]
-  markRead: (id: string) => void
-  seed: () => void
+  loading: boolean
+  error: string | null
+  
+  // Fetch notifications from backend
+  fetchNotifications: () => Promise<void>
+  
+  // Mark single notification as read
+  markRead: (id: string) => Promise<void>
+  
+  // Mark all as read
+  markAllAsRead: () => Promise<void>
+  
+  // Delete notification
+  deleteNotification: (id: string) => Promise<void>
+  
+  // Get unread count
+  getUnreadCount: () => number
 }
 
-const seedNotifications: Notification[] = [
-  {
-    type: 'mention',
-    id: 'n1',
-    authorId: 'pastor_grace',
-    authorName: 'Pastor Grace',
-    authorAvatar: 'https://i.pravatar.cc/150?img=1',
-    isVerified: true,
-    comment: 'This is such a powerful message! Thank you for sharing this perspective.',
-    replyingTo: 'user123',
-    createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-    unread: true,
-  },
-  {
-    type: 'like',
-    id: 'n2',
-    authorId: 'imam_kareem',
-    authorName: 'Imam Kareem',
-    authorAvatar: 'https://i.pravatar.cc/150?img=2',
-    isVerified: true,
-    actionType: 'post',
-    createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    unread: true,
-  },
-  {
-    type: 'comment',
-    id: 'n3',
-    authorId: 'rabbi_leah',
-    authorName: 'Rabbi Leah',
-    authorAvatar: 'https://i.pravatar.cc/150?img=3',
-    isVerified: true,
-    comment: 'I completely agree with your thoughts on this matter. Well articulated!',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    unread: false,
-  },
-  {
-    type: 'like',
-    id: 'n4',
-    authorId: 'priest_james',
-    authorName: 'Priest James',
-    authorAvatar: 'https://i.pravatar.cc/150?img=4',
-    isVerified: true,
-    actionType: 'comment',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-    unread: false,
-  },
-  {
-    type: 'mention',
-    id: 'n5',
-    authorId: 'dr_smith',
-    authorName: 'Dr. Smith',
-    authorAvatar: 'https://i.pravatar.cc/150?img=5',
-    isVerified: false,
-    comment: 'Interesting take on mindfulness practices. Would love to discuss further!',
-    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    unread: false,
-  },
-]
+export const useNotificationStore = create<NotificationState>((set, get) => ({
+  items: [],
+  loading: false,
+  error: null,
 
-export const useNotificationStore = create<NotificationState>((set) => ({
-  items: seedNotifications,
-  markRead: (id) =>
-    set((state) => ({
-      items: state.items.map((n) => (n.id === id ? { ...n, unread: false } : n)),
-    })),
-  seed: () => set({ items: seedNotifications }),
+  fetchNotifications: async () => {
+    set({ loading: true, error: null })
+    try {
+      const notifications = await notificationsApi.getNotifications()
+      
+      // Map backend notifications to frontend format
+      const mappedNotifications: Notification[] = notifications.map((notif) => ({
+        ...notif,
+        type: notif.type as Notification['type'],
+      }))
+
+      set({ items: mappedNotifications, loading: false })
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Failed to load notifications'
+      set({ error: errorMessage, loading: false })
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to load notifications',
+        text2: errorMessage,
+      })
+    }
+  },
+
+  markRead: async (id: string) => {
+    try {
+      // Optimistically update UI
+      set((state) => ({
+        items: state.items.map((n) => (n.id === id ? { ...n, read: true } : n)),
+      }))
+
+      // Call backend
+      await notificationsApi.markAsRead(id)
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Failed to mark as read'
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage,
+      })
+      // Revert optimistic update
+      await get().fetchNotifications()
+    }
+  },
+
+  markAllAsRead: async () => {
+    try {
+      // Optimistically update UI
+      set((state) => ({
+        items: state.items.map((n) => ({ ...n, read: true })),
+      }))
+
+      // Call backend
+      await notificationsApi.markAllAsRead()
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Failed to mark all as read'
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage,
+      })
+      // Revert optimistic update
+      await get().fetchNotifications()
+    }
+  },
+
+  deleteNotification: async (id: string) => {
+    try {
+      // Optimistically remove from UI
+      set((state) => ({
+        items: state.items.filter((n) => n.id !== id),
+      }))
+
+      // Call backend
+      await notificationsApi.deleteNotification(id)
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || 'Failed to delete notification'
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage,
+      })
+      // Revert optimistic update
+      await get().fetchNotifications()
+    }
+  },
+
+  getUnreadCount: () => {
+    return get().items.filter((n) => !n.read).length
+  },
 }))

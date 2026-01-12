@@ -1,8 +1,13 @@
 import { View, Text, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CommentsModal } from './CommentsModal'
-import { Comment } from '../../app/posts/[id]'
+import { Comment } from '../../stores/commentStore'
+import { useEngagementStore } from '../../stores/engagementStore'
+import { useCommentStore } from '../../stores/commentStore'
+import { ReelActionModal } from './ReelActionModal'
+import { ReportModal } from '../Moderation/ReportModal'
+import { BlockUserModal } from '../Moderation/BlockUserModal'
 
 interface Reel {
   id: string
@@ -11,6 +16,8 @@ interface Reel {
   comments: number
   saves: number
   isSaved?: boolean
+  reposts: number
+  isReposted?: boolean
 }
 
 interface ReelActionsProps {
@@ -23,6 +30,9 @@ interface ReelActionsProps {
   onAddComment?: (text: string) => void
   onSharePress?: () => void
   onMorePress?: () => void
+  authorId?: string
+  authorName?: string
+  authorAvatar?: string
 }
 
 const formatCount = (num: number) => {
@@ -40,13 +50,34 @@ export const ReelActions = ({
   onAddComment,
   onSharePress,
   onMorePress,
+  authorId = '',
+  authorName = '',
+  authorAvatar = '',
 }: ReelActionsProps) => {
   const [showCommentsModal, setShowCommentsModal] = useState(false)
+  const [showActionMenu, setShowActionMenu] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [showBlockModal, setShowBlockModal] = useState(false)
+  const [localLikes, setLocalLikes] = useState(reel.likes)
+  const [localSaves, setLocalSaves] = useState(reel.saves)
+  const [localReposts, setLocalReposts] = useState(reel.reposts || 0)
+  const { isLiked, isSaved, isReposted, toggleLike, toggleSave, toggleRepost, addComment } = useEngagementStore()
+
+  // Sync local state when reel prop changes (from feed store updates)
+  useEffect(() => {
+    setLocalLikes(reel.likes)
+    setLocalSaves(reel.saves)
+    setLocalReposts(reel.reposts || 0)
+  }, [reel.likes, reel.saves, reel.reposts])
 
   const handleCommentPress = () => {
     if (onCommentPress) {
       onCommentPress(reel.id)
     }
+    // Ensure comments are loaded into store for modal
+    try {
+      useCommentStore.getState().fetchComments(reel.id).catch(() => {})
+    } catch (e) {}
     setShowCommentsModal(true)
   }
 
@@ -69,13 +100,20 @@ export const ReelActions = ({
     <>
       <View className="absolute right-4 bottom-0 gap-6 items-center">
         {/* Like Button */}
-        <Pressable onPress={() => onLikePress(reel.id)} className="items-center">
+        <Pressable onPress={() => {
+          const wasLiked = isLiked(reel.id)
+          setLocalLikes(wasLiked ? localLikes - 1 : localLikes + 1)
+          toggleLike(reel.id, wasLiked).catch(err => {
+            console.warn('Like error:', err)
+            setLocalLikes(wasLiked ? localLikes + 1 : localLikes - 1)
+          })
+        }} className="items-center">
           <Ionicons
-            name={reel.isLiked ? 'heart' : 'heart-outline'}
+            name={isLiked(reel.id) ? 'heart' : 'heart-outline'}
             size={32}
-            color={reel.isLiked ? '#FF3B5C' : 'white'}
+            color={isLiked(reel.id) ? '#FF3B5C' : 'white'}
           />
-          <Text className="text-white text-xs font-semibold mt-1">{formatCount(reel.likes)}</Text>
+          <Text className="text-white text-xs font-semibold mt-1">{formatCount(localLikes)}</Text>
         </Pressable>
 
         {/* Comment Button */}
@@ -85,24 +123,42 @@ export const ReelActions = ({
         </Pressable>
 
         {/* Save Button */}
-        <Pressable onPress={() => onSavePress(reel.id)} className="items-center">
+        <Pressable onPress={() => {
+          const wasSaved = isSaved(reel.id)
+          setLocalSaves(wasSaved ? localSaves - 1 : localSaves + 1)
+          toggleSave(reel.id, wasSaved).catch(err => {
+            console.warn('Save error:', err)
+            setLocalSaves(wasSaved ? localSaves + 1 : localSaves - 1)
+          })
+        }} className="items-center">
           <Ionicons
-            name={reel.isSaved ? 'bookmark' : 'bookmark-outline'}
+            name={isSaved(reel.id) ? 'bookmark' : 'bookmark-outline'}
             size={30}
             color="white"
           />
-          <Text className="text-white text-xs font-semibold mt-1">{formatCount(reel.saves)}</Text>
+          <Text className="text-white text-xs font-semibold mt-1">{formatCount(localSaves)}</Text>
         </Pressable>
 
-        {/* Share Button */}
-        <Pressable onPress={onSharePress} className="items-center">
-          <Ionicons name="repeat" size={30} color="white" />
-          <Text className="text-white text-xs font-semibold mt-1">7000</Text>
+        {/* Repost Button */}
+        <Pressable onPress={() => {
+          const wasReposted = isReposted(reel.id)
+          setLocalReposts(wasReposted ? localReposts - 1 : localReposts + 1)
+          toggleRepost(reel.id, wasReposted).catch(err => {
+            console.warn('Repost error:', err)
+            setLocalReposts(wasReposted ? localReposts + 1 : localReposts - 1)
+          })
+        }} className="items-center">
+          <Ionicons 
+            name="repeat" 
+            size={30} 
+            color={isReposted(reel.id) ? 'white' : 'white'} 
+          />
+          <Text className={`text-xs font-semibold mt-1 ${isReposted(reel.id) ? 'text-white' : 'text-white'}`}>{formatCount(localReposts)}</Text>
         </Pressable>
 
         {/* More Options */}
-        <Pressable onPress={onMorePress} className="items-center">
-          <Ionicons name="ellipsis-horizontal" size={30} color="white" />
+        <Pressable onPress={() => setShowActionMenu(true)} className="items-center">
+          <Ionicons name="ellipsis-horizontal" size={28} color="white" />
         </Pressable>
       </View>
 
@@ -113,6 +169,38 @@ export const ReelActions = ({
         onLikeComment={handleLikeComment}
         onAddComment={handleAddComment}
         reelId={reel.id}
+      />
+
+      {/* Action Menu Modal */}
+      <ReelActionModal
+        visible={showActionMenu}
+        onClose={() => setShowActionMenu(false)}
+        onReport={() => {
+          setShowActionMenu(false)
+          setShowReportModal(true)
+        }}
+        onBlock={() => {
+          setShowActionMenu(false)
+          setShowBlockModal(true)
+        }}
+      />
+
+      {/* Report Modal */}
+      <ReportModal
+        visible={showReportModal}
+        contentId={reel.id}
+        contentType="reel"
+        onClose={() => setShowReportModal(false)}
+      />
+
+      {/* Block User Modal */}
+      <BlockUserModal
+        visible={showBlockModal}
+        userId={authorId}
+        userName={authorName}
+        userAvatar={authorAvatar}
+        isBlocked={false}
+        onClose={() => setShowBlockModal(false)}
       />
     </>
   )

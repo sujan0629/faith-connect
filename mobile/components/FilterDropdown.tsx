@@ -156,14 +156,14 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                   label="Reset"
                   onPress={handleReset}
                   variant="secondary"
-                  style={{ flex: 1, paddingVertical: 12, borderRadius:  30 }}
+                  style={{ flex: 1, paddingVertical: 12 }}
                 />
 
                 <SolidButton
                   label="Apply Filters"
                   onPress={handleApply}
-                  variant="primary"
-                  style={{ flex: 1, paddingVertical: 12, borderRadius: 30 }}
+                  variant="blue"
+                  style={{ flex: 1, paddingVertical: 12 }}
                 />
               </View>
             </View>

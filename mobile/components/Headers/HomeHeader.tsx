@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '../../stores/authStore'
+import { useOfflineStore } from '../../stores/offlineStore'
 import { api } from '../../api/axios'
 
 const segments = ['Explore', 'Following'] as const
@@ -12,12 +13,14 @@ interface HomeHeaderProps {
   segment: Segment
   onSegmentChange: (segment: Segment) => void
   isAtTop: boolean
+  isOffline?: boolean
 }
 
-export const HomeHeader = ({ segment, onSegmentChange, isAtTop }: HomeHeaderProps) => {
+export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: HomeHeaderProps) => {
   const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const updateUser = useAuthStore((s) => s.updateUser)
+  const { isSyncing, syncError } = useOfflineStore()
   const [isExpanded, setIsExpanded] = useState(false)
   const toggleOpacity = useRef(new Animated.Value(0)).current
 
@@ -50,8 +53,19 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop }: HomeHeaderProp
 
   return (
     <View className="bg-white">
+      {isOffline && (
+        <View className="bg-gray-100 px-4 py-2 flex-row items-center gap-2">
+          <Ionicons name="warning" size={16} color="#3b82f6" />
+          <Text className="text-xs font-medium text-gray-800">
+            {isSyncing ? 'Syncing offline changes...' : syncError ? 'Sync failed' : 'Offline mode'}
+          </Text>
+        </View>
+      )}
       <View className="flex-row items-center justify-between px-4 py-3">
-        <Pressable className="h-9 w-9 items-center justify-center">
+        <Pressable 
+          onPress={() => router.push('/search')}
+          className="h-9 w-9 items-center justify-center"
+        >
           <Ionicons name="filter" size={24} color="#111111" />
         </Pressable>
         <Pressable 
@@ -68,14 +82,14 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop }: HomeHeaderProp
           />
         </Pressable>
         <Pressable 
-          className="h-9 w-9 items-center justify-center"
-          onPress={() => user?.id && router.push(`/profile/${user.id}` as any)}
-        >
-          <Image 
-            source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHww' }} 
-            className="h-9 w-9 rounded-full bg-gray-200" 
-          />
-        </Pressable>
+            className="h-9 w-9 items-center justify-center"
+            onPress={() => user?.id && router.push(`/profile/${user.id}` as any)}
+          >
+            <Image 
+              source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHww' }} 
+              className="h-9 w-9 rounded-full bg-gray-200" 
+            />
+          </Pressable>
       </View>
       
       {shouldShow && (

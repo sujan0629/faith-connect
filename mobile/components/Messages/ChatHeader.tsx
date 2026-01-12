@@ -1,5 +1,9 @@
 import { View, Text, Image, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useState } from 'react'
+import { AccountActionModal } from '../Profile/AccountActionModal'
+import { ReportModal } from '../Moderation/ReportModal'
+import { BlockUserModal } from '../Moderation/BlockUserModal'
 
 interface ChatHeaderProps {
   peerName: string
@@ -9,10 +13,24 @@ interface ChatHeaderProps {
 }
 
 export const ChatHeader = ({ peerName, avatar, isActive, onBack }: ChatHeaderProps) => {
+  const [showActionModal, setShowActionModal] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [showBlockModal, setShowBlockModal] = useState(false)
+
+  const handleReport = () => {
+    setShowActionModal(false)
+    setShowReportModal(true)
+  }
+
+  const handleBlock = () => {
+    setShowActionModal(false)
+    setShowBlockModal(true)
+  }
+
   return (
-    <View className="border-b border-[#e5e5e5] bg-white px-4 py-4">
-      <View className="flex-row items-center justify-between">
-        <View className="flex-row flex-1 items-center gap-3">
+      <View className="border-b border-[#e5e5e5] bg-white px-4 py-4">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row flex-1 items-center gap-3">
           <Pressable onPress={onBack}>
             <Ionicons name="chevron-back" size={24} color="#111111" />
           </Pressable>
@@ -38,11 +56,35 @@ export const ChatHeader = ({ peerName, avatar, isActive, onBack }: ChatHeaderPro
 
         {/* Action buttons */}
         <View className="flex-row gap-4">
-          <Pressable>
+          <Pressable onPress={() => setShowActionModal(true)}>
             <Ionicons name="information-circle-outline" size={24} color="#111111" />
           </Pressable>
         </View>
       </View>
-    </View>
+
+      <AccountActionModal
+        visible={showActionModal}
+        onClose={() => setShowActionModal(false)}
+        onReport={handleReport}
+        onBlock={handleBlock}
+      />
+
+      <ReportModal
+        visible={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        contentType="user"
+        contentId=""
+      />
+
+      <BlockUserModal
+        visible={showBlockModal}
+        onClose={() => setShowBlockModal(false)}
+        userId=""
+        userName={peerName}
+        userAvatar={avatar}
+        isBlocked={false}
+      />
+
+</View>
   )
 }

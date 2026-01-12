@@ -159,7 +159,7 @@ export default function Login() {
 
             <View className="flex-row gap-3">
               <Pressable
-                onPress={() => {}}
+                onPress={() => Toast.show({ type: 'info', text1: 'Available shortly', text2: 'Google login will be available in Phase 2' })}
                 className="flex-1 rounded-xl border border-gray-300 bg-white py-3 items-center justify-center flex-row"
               >
                 <MaterialCommunityIcons name="google" size={20} color="#333" />
@@ -167,7 +167,7 @@ export default function Login() {
               </Pressable>
 
               <Pressable
-                onPress={() => {}}
+                onPress={() => Toast.show({ type: 'info', text1: 'Available shortly', text2: 'Microsoft login will be available in Phase 2' })}
                 className="flex-1 rounded-xl border border-gray-300 bg-white py-3 items-center justify-center flex-row"
               >
                 <MaterialCommunityIcons name="microsoft" size={20} color="#333" />
@@ -175,7 +175,7 @@ export default function Login() {
               </Pressable>
 
               <Pressable
-                onPress={() => {}}
+                onPress={() => Toast.show({ type: 'info', text1: 'Available shortly', text2: 'Slack login will be available in Phase 2' })}
                 className="flex-1 rounded-xl border border-gray-300 bg-white py-3 items-center justify-center flex-row"
               >
                 <MaterialCommunityIcons name="slack" size={20} color="#333" />

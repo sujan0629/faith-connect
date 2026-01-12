@@ -19,6 +19,7 @@ import {
 } from "@expo-google-fonts/roboto";
 import * as SplashScreen from "expo-splash-screen";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -48,24 +49,26 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} className="flex-1 bg-white">
-      <KeyboardProvider>
-        <SafeAreaProvider>
-          <StatusBar style="dark" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: "#FFFFFF" },
-              gestureEnabled: false,
-            }}
-          >
-            <Stack.Screen name="index" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="magic-login" options={{ gestureEnabled: false }} />
-          </Stack>
-          <Toast config={toastConfig} position="top" topOffset={60} />
-        </SafeAreaProvider>
-      </KeyboardProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }} className="flex-1 bg-white">
+        <KeyboardProvider>
+          <SafeAreaProvider>
+            <StatusBar style="dark" />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: "#FFFFFF" },
+                gestureEnabled: false,
+              }}
+            >
+              <Stack.Screen name="index" options={{ gestureEnabled: false }} />
+              <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+              <Stack.Screen name="magic-login" options={{ gestureEnabled: false }} />
+            </Stack>
+            <Toast config={toastConfig} position="top" topOffset={60} />
+          </SafeAreaProvider>
+        </KeyboardProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

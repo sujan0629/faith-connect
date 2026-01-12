@@ -1,7 +1,7 @@
 import { View, Text, Pressable, Image } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import { SolidButton } from '../Buttons/SolidButtonTwo'
-import { Leader } from '../../stores/leaderStore'
+import { useFollowStore } from '../../stores/followStore'
+import type { Leader } from '@faithconnect/shared'
 
 interface Props {
   item: Leader
@@ -10,7 +10,15 @@ interface Props {
   hideFollowButton?: boolean
 }
 
-export const LeaderCard = ({ item, onToggleFollow, onOpenProfile, hideFollowButton = false }: Props) => (
+export const LeaderCard = ({ item, onToggleFollow, onOpenProfile, hideFollowButton = false }: Props) => {
+  const { isFollowing: checkFollowing } = useFollowStore()
+  const isFollowingLeader = checkFollowing(item.id)
+
+  const handleToggleFollow = () => {
+    onToggleFollow(item.id, !isFollowingLeader)
+  }
+
+  return (
   <Pressable
     onPress={() => onOpenProfile?.(item.id)}
     className="bg-white p-4"
@@ -31,9 +39,9 @@ export const LeaderCard = ({ item, onToggleFollow, onOpenProfile, hideFollowButt
         {!hideFollowButton && (
           <View className="self-start mt-2">
             <SolidButton
-              label={item.isFollowed ? 'Following' : 'Follow'}
-              onPress={() => onToggleFollow(item.id, !item.isFollowed)}
-              variant={item.isFollowed ? 'secondary' : 'primary'}
+              label={isFollowingLeader ? 'Following' : 'Follow'}
+              onPress={handleToggleFollow}
+              variant={isFollowingLeader ? 'secondary' : 'primary'}
               style={{ marginTop: 8, paddingVertical: 8 }}
             />
           </View>
@@ -41,4 +49,5 @@ export const LeaderCard = ({ item, onToggleFollow, onOpenProfile, hideFollowButt
       </View>
     </View>
   </Pressable>
-)
+  )
+}

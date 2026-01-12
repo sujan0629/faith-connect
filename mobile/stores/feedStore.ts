@@ -1,8 +1,17 @@
 import { create } from 'zustand'
-import { Role } from './authStore'
+import {
+  UserVector,
+  buildUserVector,
+  rankExploreFeeds,
+  rankExploreFeeds_ColdStart,
+  updateUserVector,
+  normalizeVector,
+} from '../lib/feedAlgorithm'
+import { rankReels, rankReelsWithinBuckets } from '../lib/reelsAlgorithm'
+import { cacheUserVector, getCachedUserVector, invalidateUserVectorCache } from '../lib/caching'
 
 export type PostType = 'post' | 'reel'
-export type MediaType = 'image' | 'video' | 'none'
+export type MediaType = 'image' | 'video' | 'reel' | 'none'
 
 export type Post = {
   id: string
@@ -10,212 +19,86 @@ export type Post = {
   authorName: string
   authorAvatar?: string
   faith?: string
-  type: PostType
-  media?: string
-  mediaType?: MediaType
   title: string
   body: string
+  media?: string
+  mediaType?: MediaType
+  type: PostType
   likes: number
-  comments: number
+  isLiked: boolean
   saves: number
-  isLiked?: boolean
-  isSaved?: boolean
+  isSaved: boolean
+  reposts: number
+  isReposted: boolean
+  comments: number
+  videoDuration?: number
+  impressions: number
+  avgWatchTime: number
+  completionRate: number
+  replayCount: number
   createdAt: string
 }
 
 type FeedState = {
   explore: Post[]
   following: Post[]
-  addPost: (post: Omit<Post, 'id' | 'likes' | 'comments' | 'saves' | 'createdAt'>) => void
+  reels: Post[]
+  userVector: UserVector | null
+  authorFaiths: Record<string, string>
+  setFeed: (posts: Post[]) => void
+  setFollowing: (posts: Post[]) => void
+  setReels: (reels: Post[]) => void
+  updatePost: (id: string, post: Partial<Post>) => void
+  addPost: (post: Post) => void
+  removePost: (id: string) => void
   toggleLike: (id: string) => void
   toggleSave: (id: string) => void
-  seed: (options?: { role?: Role }) => void
+  // Algorithm methods
+  initializeUserVector: (userId: string, faith?: string, contentFocus?: string[]) => Promise<void>
+  loadCachedVector: (userId: string) => Promise<void>
+  recordInteraction: (userId: string, postId: string, type: 'like' | 'comment' | 'save' | 'view', authorFaith?: string) => Promise<void>
+  rankExplore: (userId: string) => void
+  rankFollowing: (userId: string) => void
+  rankReelsContent: (userId: string) => void
+  setAuthorFaith: (authorId: string, faith: string) => void
 }
 
-const seedPosts = (): Post[] => [
-  {
-    id: 'p1',
-    authorId: 'l1',
-    authorName: 'Rabbi Abraham Cohen',
-    authorAvatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Judaism',
-    type: 'post',
-    media: undefined,
-    mediaType: 'none',
-    title: 'Morning Reflection',
-    body: 'Lorem ipsum dolor sit amet consectetur. Nisl feugiat gravida faucibus venenatis ornare dictum vulputate purus duis. Justo dictumst gravida egestas mauris sed scelerisque in pulvinar. Enim morbi senectus est et ac.',
-    likes: 48800,
-    comments: 180000,
-    saves: 12000,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p2',
-    authorId: 'l2',
-    authorName: 'Rabbi Aaron Kaplan',
-    authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHww',
-    faith: 'Judaism',
-    type: 'reel',
-    media: 'https://codelitsstudio.com/videos/reel-2.mp4',
-    mediaType: 'video',
-    title: 'Video Title Goes Here...',
-    body: 'Lorem ipsum dolor sit amet consectetur. Vivamus aenean accumsan ipsum blandit velit neque.',
-    likes: 20200,
-    comments: 12000,
-    saves: 16000,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p3',
-    authorId: 'l3',
-    authorName: 'Rabbi David Rosenberg',
-    authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Judaism',
-    type: 'post',
-    media: 'https://codelitsstudio.com/videos/ecommerce.mp4',
-    mediaType: 'video',
-    title: 'Weekly Torah Study',
-    body: 'Join us for an insightful discussion on this weeks parsha. Understanding the deeper meanings of our sacred texts.',
-    likes: 20000,
-    comments: 11000,
-    saves: 14000,
-    isLiked: false,
-    isSaved: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p4',
-    authorId: 'l4',
-    authorName: 'Rabbi Samuel Katz',
-    authorAvatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Judaism',
-    type: 'reel',
-    media: 'https://codelitsstudio.com/videos/reel-1.mp4',
-    mediaType: 'video',
-    title: 'Bossing it',
-    body: 'Who was the best CEO of 2025?',
-    likes: 15000,
-    comments: 8000,
-    saves: 9000,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p5',
-    authorId: 'l5',
-    authorName: 'Pastor Michael Stevens',
-    authorAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Christianity',
-    type: 'post',
-    media: undefined,
-    mediaType: 'none',
-    title: 'Grace and Mercy',
-    body: 'In times of difficulty, remember that grace is not earned but given freely. Let us extend that same mercy to others as we have received it.',
-    likes: 32500,
-    comments: 8900,
-    saves: 11200,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p6',
-    authorId: 'l6',
-    authorName: 'Imam Hassan Al-Rashid',
-    authorAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Islam',
-    type: 'post',
-    media: 'https://wjc.imgix.net/horizon/assets/e0SUzfic/ramadan-3384043_640.jpg?ixlib=rails-4.3.1&w=1200&h=780&auto=format%2Ccompress&fit=crop&q=60&lossless=true&s=853f215402188b21182dacbed34f2c32',
-    mediaType: 'image',
-    title: 'Evening Prayer',
-    body: 'The beauty of maghrib reminds us to be grateful for another day. Take a moment to reflect on the blessings bestowed upon you.',
-    likes: 28300,
-    comments: 9400,
-    saves: 13500,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p7',
-    authorId: 'l7',
-    authorName: 'Rabbi Sarah Goldstein',
-    authorAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Judaism',
-    type: 'post',
-    media: undefined,
-    mediaType: 'none',
-    title: 'Shabbat Shalom',
-    body: 'As we enter the day of rest, may we find peace in disconnecting from our busy lives and reconnecting with our faith and loved ones.',
-    likes: 41200,
-    comments: 14500,
-    saves: 18900,
-    isSaved: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p8',
-    authorId: 'l8',
-    authorName: 'Pastor Jennifer Wright',
-    authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Christianity',
-    type: 'reel',
-    media: 'https://codelitsstudio.com/videos/reel3.mp4',
-    mediaType: 'video',
-    title: 'Sunday Worship Highlights',
-    body: 'Join us as we celebrate together in worship. The joy of the Lord is our strength!',
-    likes: 55600,
-    comments: 22100,
-    saves: 31400,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p9',
-    authorId: 'l9',
-    authorName: 'Imam Omar Abdullah',
-    authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Islam',
-    type: 'post',
-    media: undefined,
-    mediaType: 'none',
-    title: 'Patience in Trials',
-    body: 'Remember, with every hardship comes ease. Allah does not burden a soul beyond what it can bear. Trust in His plan and remain steadfast.',
-    likes: 37800,
-    comments: 10200,
-    saves: 15600,
-    isLiked: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'p10',
-    authorId: 'l10',
-    authorName: 'Rabbi Jonathan Levine',
-    authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80',
-    faith: 'Judaism',
-    type: 'post',
-    media: 'https://images.unsplash.com/photo-1566475955255-404134a79aeb?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8NCUzQTN8ZW58MHx8MHx8fDA%3D',
-    mediaType: 'image',
-    title: 'Ancient Wisdom',
-    body: 'The teachings of our ancestors continue to guide us today. Let us honor their wisdom by living with integrity and compassion.',
-    likes: 29100,
-    comments: 7800,
-    saves: 12300,
-    createdAt: new Date().toISOString(),
-  },
-]
-
 export const useFeedStore = create<FeedState>((set, get) => ({
-  explore: seedPosts(),
-  following: seedPosts().slice(0, 2),
-  addPost: (payload) => {
-    const post: Post = {
-      ...payload,
-      id: `post-${Date.now()}`,
-      likes: 0,
-      comments: 0,
-      saves: 0,
-      createdAt: new Date().toISOString(),
-    }
+  explore: [],
+  following: [],
+  reels: [],
+  userVector: null,
+  authorFaiths: {},
+
+  setFeed: (posts) => set({ explore: posts }),
+  setFollowing: (posts) => set({ following: posts }),
+  setReels: (reels) => set({ reels }),
+
+  setAuthorFaith: (authorId, faith) =>
+    set((state) => ({
+      authorFaiths: { ...state.authorFaiths, [authorId]: faith },
+    })),
+
+  addPost: (post) =>
     set((state) => ({
       explore: [post, ...state.explore],
-      following: payload.type === 'post' ? [post, ...state.following] : state.following,
-    }))
-  },
+      following: post.type === 'post' ? [post, ...state.following] : state.following,
+    })),
+
+  removePost: (id) =>
+    set((state) => ({
+      explore: state.explore.filter((p) => p.id !== id),
+      following: state.following.filter((p) => p.id !== id),
+      reels: state.reels.filter((p) => p.id !== id),
+    })),
+
+  updatePost: (id, partial) =>
+    set((state) => ({
+      explore: state.explore.map((p) => (p.id === id ? { ...p, ...partial } : p)),
+      following: state.following.map((p) => (p.id === id ? { ...p, ...partial } : p)),
+      reels: state.reels.map((p) => (p.id === id ? { ...p, ...partial } : p)),
+    })),
+
   toggleLike: (id) =>
     set((state) => ({
       explore: state.explore.map((p) =>
@@ -228,7 +111,13 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 }
           : p,
       ),
+      reels: state.reels.map((p) =>
+        p.id === id
+          ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 }
+          : p,
+      ),
     })),
+
   toggleSave: (id) =>
     set((state) => ({
       explore: state.explore.map((p) =>
@@ -241,6 +130,87 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           ? { ...p, isSaved: !p.isSaved, saves: p.isSaved ? p.saves - 1 : p.saves + 1 }
           : p,
       ),
+      reels: state.reels.map((p) =>
+        p.id === id
+          ? { ...p, isSaved: !p.isSaved, saves: p.isSaved ? p.saves - 1 : p.saves + 1 }
+          : p,
+      ),
     })),
-  seed: () => set({ explore: seedPosts(), following: seedPosts().slice(0, 2) }),
+
+  // Initialize user vector on first load
+  initializeUserVector: async (userId, faith, contentFocus) => {
+    const vector = buildUserVector(faith, contentFocus, 0)
+    set({ userVector: vector })
+    await cacheUserVector(userId, vector)
+  },
+
+  // Load cached vector if available
+  loadCachedVector: async (userId) => {
+    const cached = await getCachedUserVector(userId)
+    if (cached) {
+      set({ userVector: cached })
+    }
+  },
+
+  // Record interaction and update user vector
+  recordInteraction: async (userId, postId, type, authorFaith) => {
+    const state = get()
+    const post = [...state.explore, ...state.following, ...state.reels].find(
+      (p) => p.id === postId,
+    )
+
+    if (!post || !state.userVector) return
+
+    const updated = updateUserVector(state.userVector, post, type, authorFaith)
+    const normalized = normalizeVector(updated)
+
+    set({ userVector: normalized })
+    await cacheUserVector(userId, normalized)
+    await invalidateUserVectorCache(userId) // Invalidate old cache immediately
+  },
+
+  // Rank explore feed based on user vector
+  rankExplore: (userId) => {
+    const state = get()
+    if (!state.userVector) {
+      // Cold start: use faith-based ranking (no user vector yet)
+      const ranked = rankExploreFeeds_ColdStart(state.explore)
+      set({ explore: ranked })
+      return
+    }
+
+    // Personalized ranking
+    const ranked = rankExploreFeeds(
+      state.explore,
+      state.userVector,
+      state.authorFaiths,
+    )
+    set({ explore: ranked })
+  },
+
+  // Rank following feed
+  rankFollowing: (userId) => {
+    const state = get()
+    if (!state.userVector) {
+      return
+    }
+
+    const ranked = rankExploreFeeds(
+      state.following,
+      state.userVector,
+      state.authorFaiths,
+      { similarity: 0.4, engagement: 0.4, freshness: 0.2 }, // Higher engagement weight for following
+    )
+    set({ following: ranked })
+  },
+
+  // Rank reels content
+  rankReelsContent: (userId) => {
+    const state = get()
+    const userFaith = state.userVector?.faith ? Object.keys(state.userVector.faith)[0] : undefined
+    
+    // Use bucket-based ranking for fair comparison across video lengths
+    const ranked = rankReelsWithinBuckets(state.reels, userFaith)
+    set({ reels: ranked })
+  },
 }))

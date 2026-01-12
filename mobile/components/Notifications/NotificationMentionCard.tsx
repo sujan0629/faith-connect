@@ -49,12 +49,9 @@ export const NotificationMentionCard = ({
           </View>
         </View>
 
-        {/* Timestamp and menu */}
+        {/* Timestamp */}
         <View className="flex-row items-center gap-2">
           <Text className="text-xs text-[#999999]">{timestamp}</Text>
-          <Pressable onPress={() => onMenu(id)}>
-            <Text className="text-base font-bold text-[#999999]">•••</Text>
-          </Pressable>
         </View>
       </View>
 

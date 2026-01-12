@@ -1,7 +1,6 @@
 import { Text, View, Image, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { BlurView } from 'expo-blur'
-import appIcon from '../assets/images/icon.png'
 import type { BaseToastProps, ToastConfig } from 'react-native-toast-message'
 
 export const toastConfig: ToastConfig = {

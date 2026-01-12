@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import appIcon from '../assets/images/icon.png'
 import { useEffect } from 'react'
+import * as ImagePicker from 'expo-image-picker'
 
 export default function Landing() {
     const router = useRouter()
@@ -12,7 +13,25 @@ export default function Landing() {
     const insets = useSafeAreaInsets()
 
     useEffect(() => {
-        hydrate()
+        const init = async () => {
+            await hydrate()
+            
+            // Request media permissions on app launch
+            try {
+                const cameraPermission = await ImagePicker.requestCameraPermissionsAsync()
+                if (cameraPermission.status !== 'granted') {
+                    console.log('Camera permission denied')
+                }
+                
+                const libraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync()
+                if (libraryPermission.status !== 'granted') {
+                    console.log('Photo library permission denied')
+                }
+            } catch (error) {
+                console.error('Failed to request permissions:', error)
+            }
+        }
+        init()
     }, [])
 
     useEffect(() => {

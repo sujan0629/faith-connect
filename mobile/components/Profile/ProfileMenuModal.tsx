@@ -33,17 +33,11 @@ export const ProfileMenuModal: React.FC<ProfileMenuModalProps> = ({
     {
       title: 'Basic Settings',
       items: [
-        { label: 'Notifications', icon: 'notifications-outline', onPress: () => console.log('Notifications') },
+        { label: 'Settings', icon: 'settings-outline', onPress: () => router.push('/settings') },
         { label: 'Language', icon: 'language-outline', onPress: () => console.log('Language') },
       ]
     },
-    {
-      title: 'Help & Support',
-      items: [
-        { label: 'Help Center', icon: 'help-circle-outline', onPress: () => console.log('Help') },
-        { label: 'Report Issue', icon: 'flag-outline', onPress: () => console.log('Report') },
-      ]
-    },
+   
     {
       title: 'About',
       items: [
@@ -77,7 +71,7 @@ export const ProfileMenuModal: React.FC<ProfileMenuModalProps> = ({
         />
 
         {/* Bottom Sheet */}
-        <View className="bg-white rounded-t-2xl max-h-[85%] shadow-lg">
+        <View className="bg-white rounded-t-2xl max-h-[85%] shadow-sm">
           {/* Handle Bar */}
           <View className="items-center py-2">
             <View className="w-10 h-1 bg-gray-300 rounded-full" />
