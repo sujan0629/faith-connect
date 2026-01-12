@@ -1,5 +1,6 @@
 // Types
 export * from './types/user.types';
+export * from './types/leader.types';
 
 // DTOs
 export * from './dto/auth.dto';

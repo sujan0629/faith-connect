@@ -14,6 +14,8 @@ export interface UserProfile {
   denomination?: string;
   contentFocus?: string[];
   audiencePrefs?: string[];
+  following?: string[];
+  followers?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
