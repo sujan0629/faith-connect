@@ -1,10 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const API_URL = 'http://172.18.123.243:3000/api' 
+const API_URL = 'https://faith-connect-4z69.onrender.com/api' 
 
 export const api = axios.create({
 	baseURL: API_URL,
-	timeout: 30000, // 30 seconds for general requests
+	timeout: 60000, // 30 seconds for general requests
 })
 
 let accessToken: string | null = null
