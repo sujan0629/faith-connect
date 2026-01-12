@@ -1,11 +1,14 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
+import type { Express } from 'express';
 import { CompressionService } from './compression.service';
 
 @Injectable()
 export class UploadsService {
   private cloudinaryEnabled: boolean;
+  private uploadPreset: string | null;
+
   constructor(
     private configService: ConfigService,
     private compressionService: CompressionService,
@@ -13,6 +16,7 @@ export class UploadsService {
     const cloudName = this.configService.get<string>('CLOUDINARY_CLOUD_NAME');
     const apiKey = this.configService.get<string>('CLOUDINARY_API_KEY');
     const apiSecret = this.configService.get<string>('CLOUDINARY_API_SECRET');
+    this.uploadPreset = this.configService.get<string>('CLOUDINARY_UPLOAD_PRESET') || null;
 
     this.cloudinaryEnabled = Boolean(cloudName && apiKey && apiSecret);
 
@@ -155,10 +159,10 @@ export class UploadsService {
     folder: string,
   ): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
-     const options: Record<string, any> = {
-  folder,
-  resource_type: 'auto',
-};
+      const options: Record<string, any> = { folder, resource_type: 'auto' };
+      if (this.uploadPreset) {
+        options.upload_preset = this.uploadPreset;
+      }
 
       const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
         if (error) return reject(error);
@@ -178,11 +182,10 @@ export class UploadsService {
     folder: string,
   ): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
-  const options: Record<string, any> = {
-  folder,
-  resource_type: 'auto',
-};
-
+      const options: Record<string, any> = { folder, resource_type: 'auto' };
+      if (this.uploadPreset) {
+        options.upload_preset = this.uploadPreset;
+      }
 
       cloudinary.uploader.upload(filePath, options, (error, result) => {
         if (error) return reject(error);
