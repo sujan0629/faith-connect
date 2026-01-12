@@ -12,7 +12,7 @@
     "dev": "node -e \"require('fs').mkdirSync('dist/shared',{recursive:true})\" && nest build && node dist/backend/src/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "NODE_OPTIONS=\"--max-old-space-size=2048\" pnpm build && node dist/backend/src/main",
+    "start:prod": "NODE_OPTIONS=\"--max-old-space-size=2048\" node dist/backend/src/main",
     "seed": "node -e \"require('fs').mkdirSync('dist/shared',{recursive:true})\" && nest build && node dist/backend/src/seed",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
