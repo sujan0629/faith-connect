@@ -13,7 +13,7 @@ let failedQueue: Array<{
 	resolve: (value?: unknown) => void
 	reject: (reason?: any) => void
 }> = []
-
+	
 const processQueue = (error: any = null) => {
 	failedQueue.forEach((prom) => {
 		if (error) {
