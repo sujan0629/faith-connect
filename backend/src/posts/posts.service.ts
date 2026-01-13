@@ -204,7 +204,8 @@ export class PostsService {
       post.likes.push(userId);
       // Notify post author about the like
       if (post.authorId !== userId) {
-        this.notificationsService.notifyPostLike(post.authorId, userId, postId).catch(err => console.error('Notification error:', err));
+        const author = await this.usersService.findById(userId);
+        this.notificationsService.notifyPostLike(post.authorId, userId, postId, author?.username || 'User').catch(err => console.error('Notification error:', err));
       }
     }
 
@@ -240,7 +241,8 @@ export class PostsService {
       post.reposts.push(userId);
       // Notify post author about the repost
       if (post.authorId !== userId) {
-        this.notificationsService.notifyPostRepost(post.authorId, userId, postId).catch(err => console.error('Notification error:', err));
+        const author = await this.usersService.findById(userId);
+        this.notificationsService.notifyPostRepost(post.authorId, userId, postId, author?.username || 'User').catch(err => console.error('Notification error:', err));
       }
     }
 
@@ -266,7 +268,8 @@ export class PostsService {
 
     // Notify post author about the comment
     if (post.authorId !== userId) {
-      this.notificationsService.notifyCommentOnPost(post.authorId, userId, postId, text).catch(err => console.error('Notification error:', err));
+      const author = await this.usersService.findById(userId);
+      this.notificationsService.notifyCommentOnPost(post.authorId, userId, postId, text, author?.username || 'User').catch(err => console.error('Notification error:', err));
     }
 
     return post.save();
@@ -299,7 +302,8 @@ export class PostsService {
 
     // Notify comment author about the reply (if not replying to themselves)
     if (comment.userId !== userId) {
-      this.notificationsService.notifyReplyOnComment(comment.userId, userId, postId, commentId, text).catch(err => console.error('Notification error:', err));
+      const author = await this.usersService.findById(userId);
+      this.notificationsService.notifyReplyOnComment(comment.userId, userId, postId, commentId, text, author?.username || 'User').catch(err => console.error('Notification error:', err));
     }
 
     return post.save();

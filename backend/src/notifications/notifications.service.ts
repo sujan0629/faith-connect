@@ -1,13 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Notification, NotificationDocument, NotificationType } from './schemas/notification.schema';
 import { CreateNotificationDto, NotificationResponseDto } from './dto/notification.dto';
+import { PushNotificationService } from './push-notification.service';
 
 @Injectable()
 export class NotificationsService {
+  private logger = new Logger('NotificationsService');
+
   constructor(
     @InjectModel(Notification.name) private notificationModel: Model<NotificationDocument>,
+    private pushNotificationService: PushNotificationService,
   ) {}
 
   async createNotification(createNotificationDto: CreateNotificationDto): Promise<Notification> {
@@ -65,7 +69,7 @@ export class NotificationsService {
     });
   }
 
-  async notifyPostLike(postAuthorId: string, actorId: string, postId: string): Promise<void> {
+  async notifyPostLike(postAuthorId: string, actorId: string, postId: string, actorName: string): Promise<void> {
     // Check if already notified about this user liking this post in the last 24 hours
     const existingNotif = await this.notificationModel.findOne({
       recipientId: postAuthorId,
@@ -83,10 +87,23 @@ export class NotificationsService {
         postId: postId,
         actionType: 'post',
       });
+
+      // Send push notification
+      try {
+        await this.pushNotificationService.notifyPostLike(postAuthorId, actorName, postId);
+      } catch (error) {
+        this.logger.error('Error sending push notification for like:', error);
+      }
     }
   }
 
-  async notifyCommentOnPost(postAuthorId: string, commentorId: string, postId: string, commentContent: string): Promise<void> {
+  async notifyCommentOnPost(
+    postAuthorId: string,
+    commentorId: string,
+    postId: string,
+    commentContent: string,
+    commentorName: string,
+  ): Promise<void> {
     try {
       await this.createNotification({
         recipientId: postAuthorId,
@@ -96,12 +113,31 @@ export class NotificationsService {
         content: commentContent,
         actionType: 'post',
       });
+
+      // Send push notification
+      try {
+        await this.pushNotificationService.notifyPostComment(
+          postAuthorId,
+          commentorName,
+          postId,
+          commentContent,
+        );
+      } catch (error) {
+        this.logger.error('Error sending push notification for comment:', error);
+      }
     } catch (error) {
-      console.error('Error creating comment notification:', error);
+      this.logger.error('Error creating comment notification:', error);
     }
   }
 
-  async notifyReplyOnComment(commentAuthorId: string, replyerId: string, postId: string, commentId: string, replyContent: string): Promise<void> {
+  async notifyReplyOnComment(
+    commentAuthorId: string,
+    replyerId: string,
+    postId: string,
+    commentId: string,
+    replyContent: string,
+    replyerName: string,
+  ): Promise<void> {
     try {
       await this.createNotification({
         recipientId: commentAuthorId,
@@ -112,12 +148,30 @@ export class NotificationsService {
         content: replyContent,
         actionType: 'reply',
       });
+
+      // Send push notification
+      try {
+        await this.pushNotificationService.notifyCommentReply(
+          commentAuthorId,
+          replyerName,
+          postId,
+          commentId,
+          replyContent,
+        );
+      } catch (error) {
+        this.logger.error('Error sending push notification for reply:', error);
+      }
     } catch (error) {
-      console.error('Error creating reply notification:', error);
+      this.logger.error('Error creating reply notification:', error);
     }
   }
 
-  async notifyPostRepost(postAuthorId: string, actorId: string, postId: string): Promise<void> {
+  async notifyPostRepost(
+    postAuthorId: string,
+    actorId: string,
+    postId: string,
+    actorName: string,
+  ): Promise<void> {
     const existingNotif = await this.notificationModel.findOne({
       recipientId: postAuthorId,
       actorId: actorId,
@@ -134,6 +188,37 @@ export class NotificationsService {
         postId: postId,
         actionType: 'post',
       });
+
+      // Send push notification
+      try {
+        await this.pushNotificationService.sendCustomNotification(
+          postAuthorId,
+          'Post Reposted',
+          `${actorName} reposted your post`,
+          { type: 'repost', postId, actorName },
+        );
+      } catch (error) {
+        this.logger.error('Error sending push notification for repost:', error);
+      }
+    }
+  }
+
+  async notifyNewFollower(userId: string, followerId: string, followerName: string): Promise<void> {
+    try {
+      await this.createNotification({
+        recipientId: userId,
+        actorId: followerId,
+        type: NotificationType.FOLLOW,
+      });
+
+      // Send push notification
+      try {
+        await this.pushNotificationService.notifyNewFollower(userId, followerName);
+      } catch (error) {
+        this.logger.error('Error sending push notification for follow:', error);
+      }
+    } catch (error) {
+      this.logger.error('Error creating follow notification:', error);
     }
   }
 

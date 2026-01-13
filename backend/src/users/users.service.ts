@@ -228,4 +228,35 @@ export class UsersService {
 
     return this.userModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();
   }
+
+  // Push Notification Token Management
+  async registerPushToken(userId: string, token: string): Promise<void> {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    // Add token if not already exists
+    if (!user.pushNotificationTokens) {
+      user.pushNotificationTokens = [];
+    }
+    
+    if (!user.pushNotificationTokens.includes(token)) {
+      user.pushNotificationTokens.push(token);
+      await user.save();
+    }
+  }
+
+  async unregisterPushToken(userId: string, token: string): Promise<void> {
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    if (user.pushNotificationTokens) {
+      user.pushNotificationTokens = user.pushNotificationTokens.filter(t => t !== token);
+      await user.save();
+    }
+  }
+
+  async getPushTokens(userId: string): Promise<string[]> {
+    const user = await this.userModel.findById(userId).select('pushNotificationTokens');
+    return user?.pushNotificationTokens || [];
+  }
 }

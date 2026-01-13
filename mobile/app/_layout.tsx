@@ -20,6 +20,9 @@ import {
 import * as SplashScreen from "expo-splash-screen";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import notificationService from "../lib/notificationService";
+import { useAuthStore } from "../stores/authStore";
+import { api } from "../api/axios";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +35,8 @@ export default function RootLayout() {
     Roboto_700Bold_Italic,
   });
 
+  const { user } = useAuthStore();
+
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
@@ -43,6 +48,52 @@ export default function RootLayout() {
       NavigationBar.setBackgroundColorAsync("#FFFFFF").catch(() => {});
     }
   }, []);
+
+  // Initialize push notifications when user is authenticated
+  useEffect(() => {
+    const initializePushNotifications = async () => {
+      if (user && user.id) {
+        try {
+          // Register for push notifications
+          await notificationService.registerForPushNotificationsAsync(
+            user.id,
+            api,
+          );
+
+          // Setup notification listeners
+          notificationService.setupNotificationListeners(
+            (notification) => {
+              // Handle notification when app is open
+              console.log("Notification received:", notification);
+              Toast.show({
+                type: "info",
+                text1: notification.request.content.title || "New Notification",
+                text2: notification.request.content.body || "New message",
+              });
+            },
+            (response) => {
+              // Handle notification tap
+              const data = response.notification.request.content.data;
+              if (data && data.type) {
+                console.log("Navigating from notification:", data);
+                // Handle navigation based on notification type
+                // This can be expanded based on your app's structure
+              }
+            },
+          );
+        } catch (error) {
+          console.error("Error initializing push notifications:", error);
+        }
+      }
+    };
+
+    initializePushNotifications();
+
+    // Cleanup
+    return () => {
+      notificationService.removeNotificationListeners();
+    };
+  }, [user?.id]);
 
   if (!fontsLoaded) {
     return null;

@@ -1,7 +1,8 @@
 import { create } from 'zustand'
-import { setAccessToken } from '../api/axios'
+import { setAccessToken, api } from '../api/axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import type { Role, UserProfile } from '@faithconnect/shared'
+import notificationService from '../lib/notificationService'
 
 export type { Role, UserProfile }
 
@@ -52,6 +53,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 		}
 	},
 	logout: async () => {
+		// Clear push notifications
+		try {
+			await notificationService.clearPushToken(api)
+		} catch (error) {
+			console.error('Error clearing push token on logout:', error)
+		}
+
 		setAccessToken(null)
 		set({ user: undefined, accessToken: undefined, refreshToken: undefined, isAuthenticated: false })
 		await AsyncStorage.removeItem('auth').catch(() => {})

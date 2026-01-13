@@ -51,6 +51,11 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
     }
   }, [user?.id, updateUser])
 
+  const handleSegmentChange = (newSegment: Segment) => {
+    setIsExpanded(false)
+    onSegmentChange(newSegment)
+  }
+
   return (
     <View className="bg-white">
       {isOffline && (
@@ -98,7 +103,7 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
             {segments.map((item) => (
               <Pressable
                 key={item}
-                onPress={() => onSegmentChange(item)}
+                onPress={() => handleSegmentChange(item)}
                 className={`flex-1 rounded-full px-6 py-2.5 ${segment === item ? 'bg-[#111]' : 'bg-transparent'}`}
               >
                 <Text className={`text-center text-sm font-semibold ${segment === item ? 'text-white' : 'text-gray-600'}`}>

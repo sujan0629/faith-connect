@@ -100,6 +100,10 @@ export class User {
 
   @Prop({ type: [String], default: [] })
   blockedContentTopics?: string[]; // Topics to filter out from feed
+
+  // Push Notification Token
+  @Prop({ type: [String], default: [] })
+  pushNotificationTokens?: string[]; // Array of expo push notification tokens
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

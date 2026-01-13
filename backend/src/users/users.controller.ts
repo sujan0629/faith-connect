@@ -162,4 +162,34 @@ export class UsersController {
       throw error;
     }
   }
+
+  /**
+   * Register push notification token
+   */
+  @Post('me/push-token')
+  async registerPushToken(
+    @AuthUser() user: UserDocument,
+    @Body() body: { token: string },
+  ) {
+    if (!body.token) {
+      throw new BadRequestException('Token is required');
+    }
+    await this.usersService.registerPushToken(user.id, body.token);
+    return { success: true, message: 'Push token registered' };
+  }
+
+  /**
+   * Unregister push notification token
+   */
+  @Delete('me/push-token')
+  async unregisterPushToken(
+    @AuthUser() user: UserDocument,
+    @Body() body: { token: string },
+  ) {
+    if (!body.token) {
+      throw new BadRequestException('Token is required');
+    }
+    await this.usersService.unregisterPushToken(user.id, body.token);
+    return { success: true, message: 'Push token unregistered' };
+  }
 }

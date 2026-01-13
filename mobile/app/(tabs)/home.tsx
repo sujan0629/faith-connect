@@ -498,9 +498,24 @@ export default function HomeScreen() {
               />
             }
           >
-            {role === 'leader' && data.length === 0 && (
+            {role === 'leader' && segment === 'Explore' && explore.filter(p => p.authorId === user?.id).length === 0 && (
               <CreatePostCTA onPress={() => setShowCreatePostModal(true)} />
             )}
+            
+            {segment === 'Following' && following.length === 0 && (
+              <View className="mx-4 mt-8 rounded-2xl bg-gray-50 p-6 items-center">
+                <Ionicons name="people-outline" size={48} color="#3b82f6" />
+                <Text className="text-base font-semibold text-gray-900 mt-4">No leaders followed yet</Text>
+                <Text className="text-xs text-gray-600 mt-2 text-center">Follow leaders to see their updates in your feed</Text>
+                <Pressable 
+                  onPress={() => router.push('/(tabs)/leaders')}
+                  className="mt-4 bg-blue-500 px-4 py-2 rounded-xl"
+                >
+                  <Text className="text-white text-sm font-semibold">Follow Leaders</Text>
+                </Pressable>
+              </View>
+            )}
+            
         {data.map((item, index) => (
           <View key={`${item.type}-${item.id}`} onLayout={(e) => item.type === 'reel' ? handleReelLayout(item.id, e) : handlePostLayout(item.id, e)}>
             {item.type === 'reel' ? (
@@ -510,9 +525,8 @@ export default function HomeScreen() {
             )}
           </View>
         ))}
-
         {/* Loading skeleton when fetching more */}
-        {isLoadingMore && (
+        {isLoadingMore && !(segment === 'Following' && following.length === 0) && (
           <View>
             <PostCardSkeleton />
           </View>
