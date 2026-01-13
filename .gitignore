@@ -9,6 +9,10 @@ build/
 
 .history/
 
+.turbo/
+*.log
+
+
 # Logs
 logs/
 *.log
