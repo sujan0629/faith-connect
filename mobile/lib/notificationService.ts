@@ -71,13 +71,59 @@ class NotificationService {
         throw new Error('Project ID not found in app config');
       }
 
-      const token = await Notifications.getExpoPushTokenAsync({ projectId });
-      
-      if (!token.data) {
-        throw new Error('Failed to get push token');
+      // Setup notification channels and iOS badge handling
+      if (Platform.OS === 'android') {
+        // Android notification channel setup (Android 8.0+)
+        try {
+          await Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+            sound: 'default',
+            enableLights: true,
+            enableVibrate: true,
+          });
+        } catch (channelError) {
+          console.warn('Error setting notification channel:', channelError);
+          // Continue anyway - the channel might already exist
+        }
+      } else if (Platform.OS === 'ios') {
+        // iOS notification setup - request notification permissions
+        try {
+          const { status } = await Notifications.requestPermissionsAsync();
+          console.log('iOS notification permission status:', status);
+        } catch (iosError) {
+          console.warn('Error requesting iOS notification permission:', iosError);
+        }
       }
 
-      console.log('Got push token:', token.data);
+      // Get Expo push token with retry logic
+      let token;
+      let retries = 0;
+      const maxRetries = 3;
+
+      while (retries < maxRetries) {
+        try {
+          token = await Notifications.getExpoPushTokenAsync({ projectId });
+          if (token?.data) {
+            break;
+          }
+        } catch (tokenError: any) {
+          retries++;
+          if (retries >= maxRetries) {
+            throw tokenError;
+          }
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+        }
+      }
+
+      if (!token?.data) {
+        throw new Error('Failed to get push token after retries');
+      }
+
+      console.log('Successfully obtained push token:', token.data);
 
       // Register token with backend
       await this.registerTokenWithBackend(
@@ -92,20 +138,15 @@ class NotificationService {
       this.lastToken = token.data;
       await AsyncStorage.setItem('pushToken', token.data);
 
-      // Setup Android notification channel (Android 8.0+)
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-          sound: 'default',
-        });
-      }
-
       return token.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error registering for push notifications:', error);
+      
+      // Log specific Firebase errors
+      if (error?.message?.includes('FirebaseApp')) {
+        console.error('Firebase not initialized. Make sure google-services.json is properly configured.');
+      }
+      
       return null;
     }
   }

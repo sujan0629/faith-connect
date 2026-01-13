@@ -21,6 +21,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import notificationService from "../lib/notificationService";
+import { verifyFirebaseSetup } from "../lib/firebaseSetup";
 import { useAuthStore } from "../stores/authStore";
 import { api } from "../api/axios";
 
@@ -46,6 +47,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (Platform.OS === "android") {
       NavigationBar.setBackgroundColorAsync("#FFFFFF").catch(() => {});
+      // Verify Firebase setup on app start
+      verifyFirebaseSetup().then((result) => {
+        if (!result.isConfigured) {
+          console.error("Firebase not properly configured:", result.issues);
+        }
+      });
     }
   }, []);
 

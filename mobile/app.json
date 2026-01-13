@@ -10,13 +10,16 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.faithconnect.sujan0629",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs access to the camera to take profile pictures and record lessons.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to use photos and videos within the app.",
         "NSMicrophoneUsageDescription": "This app needs access to the microphone to record audio for lessons and notes.",
-        "ITSAppUsesNonExemptEncryption": false
-      },
-      "bundleIdentifier": "com.faithconnect.sujan0629"
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
     },
     "splash": {
       "image": "./assets/images/splash.png",
@@ -40,6 +43,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.faithconnect.sujan0629",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
@@ -69,6 +73,16 @@
     "plugins": [
       "expo-router",
       "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#ffffff",
+          "sounds": [
+            "./assets/sounds/notification.wav"
+          ]
+        }
+      ],
       [
         "expo-image-picker",
         {

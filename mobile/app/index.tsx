@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import appIcon from '../assets/images/icon.png'
 import { useEffect } from 'react'
 import * as ImagePicker from 'expo-image-picker'
+import * as Notifications from 'expo-notifications'
 
 export default function Landing() {
     const router = useRouter()
@@ -15,6 +16,16 @@ export default function Landing() {
     useEffect(() => {
         const init = async () => {
             await hydrate()
+            
+            // Request notification permissions
+            try {
+                const notificationPermission = await Notifications.requestPermissionsAsync()
+                if (notificationPermission.status !== 'granted') {
+                    console.log('Notification permission denied')
+                }
+            } catch (error) {
+                console.error('Failed to request notification permission:', error)
+            }
             
             // Request media permissions on app launch
             try {
