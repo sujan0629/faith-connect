@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Message, MessageDocument } from './schemas/message.schema';
 import { Thread, ThreadDocument } from './schemas/thread.schema';
 import { UsersService } from '../users/users.service';
+import { PushNotificationService } from '../notifications/push-notification.service';
 import type { UserDocument } from '../users/schemas/user.schema';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class MessagesService {
     @InjectModel(Thread.name) private threadModel: Model<ThreadDocument>,
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
     private usersService: UsersService,
+    private pushNotificationService: PushNotificationService,
   ) {}
 
   private buildPairKey(userA: string, userB: string) {
@@ -121,6 +123,8 @@ export class MessagesService {
     thread.lastMessage = content;
     thread.lastSender = sender._id;
     if (!thread.unread) thread.unread = new Map<string, number>();
+    let recipientId: string | null = null;
+    
     thread.participants.forEach((participantId) => {
       const id = participantId.toString();
       if (id === sender.id) {
@@ -128,9 +132,24 @@ export class MessagesService {
       } else {
         const current = thread.unread!.get(id) ?? 0;
         thread.unread!.set(id, current + 1);
+        recipientId = id;
       }
     });
     await thread.save();
+
+    // Send push notification to recipient
+    if (recipientId) {
+      try {
+        await this.pushNotificationService.notifyNewMessage(
+          recipientId,
+          sender.name || sender.username || 'Someone',
+          content,
+        );
+      } catch (error) {
+        console.error('Failed to send message push notification:', error);
+        // Don't fail the message send if push notification fails
+      }
+    }
 
     return {
       id: message.id,

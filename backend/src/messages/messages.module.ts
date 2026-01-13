@@ -5,10 +5,12 @@ import { MessagesService } from './messages.service';
 import { Thread, ThreadSchema } from './schemas/thread.schema';
 import { Message, MessageSchema } from './schemas/message.schema';
 import { UsersModule } from '../users/users.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     UsersModule,
+    NotificationsModule,
     MongooseModule.forFeature([
       { name: Thread.name, schema: ThreadSchema },
       { name: Message.name, schema: MessageSchema },
