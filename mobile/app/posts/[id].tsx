@@ -176,7 +176,7 @@ export default function PostDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#222" />
+        <ActivityIndicator size="small" color="#222" />
       </SafeAreaView>
     )
   }

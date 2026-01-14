@@ -10,11 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.faithconnect.sujan0629",
+      "bundleIdentifier": "com.faithconnect.fc1",
       "infoPlist": {
-        "NSCameraUsageDescription": "This app needs access to the camera to take profile pictures and record lessons.",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to use photos and videos within the app.",
-        "NSMicrophoneUsageDescription": "This app needs access to the microphone to record audio for lessons and notes.",
+        "NSCameraUsageDescription": "This app needs access to your camera to take profile pictures and other media.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select photos and videos for use within the app.",
+        "NSPhotoLibraryAddUsageDescription": "This app may add photos or videos to your library only when you explicitly choose to save them.",
+        "NSMicrophoneUsageDescription": "This app may need access to your microphone when you explicitly choose to record audio.",
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "remote-notification"
@@ -83,7 +84,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "The app accesses your photos to let you share them.",
+          "photosPermission": "The app accesses your photos to let you select and share them.",
           "cameraPermission": "The app accesses your camera to let you take photos."
         }
       ],
@@ -96,7 +97,7 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "The app accesses your photo gallery to allow you to use photos and videos within the app.",
+          "photosPermission": "The app accesses your photo gallery to let you select photos and videos for use within the app.",
           "isAccessMediaLocationEnabled": false
         }
       ],
