@@ -54,9 +54,9 @@ export function useAppUpdate() {
 
 	const promptForStoreUpdate = useCallback(() => {
 		if (Platform.OS === 'android') {
-			Linking.openURL('market://details?id=com.noteswift')
+			Linking.openURL('market://details?id=com.faithconnect.sujan0629')
 		} else if (Platform.OS === 'ios') {
-			Linking.openURL('itms-apps://itunes.apple.com/app/idYOUR_APPLE_ID')
+			Linking.openURL('itms-apps://itunes.apple.com/app/idYOUR_APP_STORE_ID')
 		}
 	}, [])
 

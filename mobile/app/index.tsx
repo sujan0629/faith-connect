@@ -1,4 +1,4 @@
-import { Link, useRouter, useLocalSearchParams } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { View, Text, Image, Pressable, ActivityIndicator } from 'react-native'
 import { useAuthStore } from '../stores/authStore'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -89,25 +89,25 @@ export default function Landing() {
                 {/* Bottom Section: Buttons and Footer */}
                 <View className="w-full">
                     <View className="gap-4">
-                        <Link
-                            href="/auth/login"
-                            asChild
-                            onPress={() => setRolePreference('worshiper')}
+                        <Pressable
+                            onPress={() => {
+                                setRolePreference('worshiper')
+                                router.push('/auth/login')
+                            }}
+                            className="rounded-2xl bg-blue-500 px-6 py-4"
                         >
-                            <Pressable className="rounded-2xl bg-blue-500 px-6 py-4">
-                                <Text className="text-center text-base font-semibold text-white">Continue as Worshiper</Text>
-                            </Pressable>
-                        </Link>
+                            <Text className="text-center text-base font-semibold text-white">Continue as Worshiper</Text>
+                        </Pressable>
                         
-                        <Link
-                            href="/auth/login"
-                            asChild
-                            onPress={() => setRolePreference('leader')}
+                        <Pressable
+                            onPress={() => {
+                                setRolePreference('leader')
+                                router.push('/auth/login')
+                            }}
+                            className="rounded-2xl bg-gray-200 px-6 py-4"
                         >
-                            <Pressable className="rounded-2xl bg-gray-200 px-6 py-4">
-                                <Text className="text-center text-base font-semibold text-gray-700">Continue as Religious Leader</Text>
-                            </Pressable>
-                        </Link>
+                            <Text className="text-center text-base font-semibold text-gray-700">Continue as Religious Leader</Text>
+                        </Pressable>
                     </View>
 
                     {/* Horizontal Line */}

@@ -60,7 +60,7 @@ export default function MagicLoginScreen() {
           await new Promise(resolve => setTimeout(resolve, 100));
           
           console.log('[MagicLogin] Auth stored, navigating...');
-          router.replace(data.user?.hasProfile ? "/(tabs)/home" : "/onboarding/profile");
+          router.replace(data.user?.onboardingCompleted ? "/(tabs)/home" : "/onboarding/profile");
           setTimeout(() => {
             Toast.show({ type: "success", text1: "Signed in", text2: "Welcome back" });
           }, 400);

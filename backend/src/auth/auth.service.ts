@@ -42,9 +42,15 @@ export class AuthService {
     const email = dto.email.toLowerCase();
     const user = await this.usersService.findByEmail(email);
 
+    // If caller provided a role preference, don't send the magic link immediately
+    // when there's a mismatch — return a role-mismatch so client can confirm.
     if (user && user.status === 'active') {
+      if (dto.role && dto.role !== user.role) {
+        return { status: 'role-mismatch', email, role: user.role };
+      }
+
       await this.sendMagicLink(user);
-      return { status: 'magic-link-sent', email };
+      return { status: 'magic-link-sent', email, role: user.role };
     }
 
     if (user && user.status === 'pending') {

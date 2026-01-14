@@ -57,16 +57,17 @@ export default function ChatThread() {
     };
   });
 
-  const handleSend = async () => {
+  const handleSend = async (message?: string) => {
     if (!user) {
       Toast.show({ type: 'error', text1: 'Sign in first' })
       return
     }
-    if (!content.trim()) return
+    const msg = (message ?? content).trim()
+    if (!msg) return
     try {
       if (!threadId) return
-      await sendMessage(threadId, content.trim())
-      setContent('')
+      await sendMessage(threadId, msg)
+      // ChatInput already clears the input instantly via onChangeText('')
       setTimeout(() => {
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
       }, 100)

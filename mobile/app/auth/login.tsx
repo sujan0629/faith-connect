@@ -22,7 +22,7 @@ import { useZodValidation } from '../../hooks/useZodValidation';
 
 export default function Login() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user, rolePreference } = useAuthStore()
   const [email, setEmail] = useState("");
   const [magicLinkSending, setMagicLinkSending] = useState(false);
   const [magicLinkError, setMagicLinkError] = useState<string | null>(null);
@@ -64,12 +64,27 @@ export default function Login() {
     setMagicLinkSending(true);
 
     try {
-      const { data } = await api.post('/auth/check-email', { email: email.trim() });
+      const { data } = await api.post('/auth/check-email', { email: email.trim(), role: rolePreference });
       if (data.status === 'magic-link-sent') {
         router.push({ pathname: "/auth/EmailSentScreen", params: { email: email.trim(), isSignup: "false" } });
         setTimeout(() => {
           Toast.show({ type: 'success', text1: 'Magic link sent', text2: 'Check your email' });
         }, 300);
+      } else if (data.status === 'role-mismatch') {
+        const roleName = data.role === 'leader' ? 'Leader' : 'Worshiper';
+        Alert.alert(
+          "Role Mismatch",
+          `This email is registered as a ${roleName} account.`,
+          [
+            {
+              text: 'Back',
+              onPress: () => {
+                router.replace('/');
+              },
+            },
+            { text: 'Cancel' },
+          ],
+        );
       } else if (data.status === 'signup-incomplete') {
         router.push({ pathname: "/auth/EmailSentScreen", params: { email: email.trim(), isSignup: "true" } });
         setTimeout(() => {

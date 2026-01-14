@@ -4,15 +4,18 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 interface ChatInputProps {
   value: string
   onChangeText: (text: string) => void
-  onSend: () => void
+  onSend: (text: string) => void
   isKeyboardVisible?: boolean
 }
 
 export const ChatInput = ({ value, onChangeText, onSend, isKeyboardVisible = false }: ChatInputProps) => {
 
   const handleSend = () => {
-    if (value.trim()) {
-      onSend()
+    const msg = value.trim()
+    if (msg) {
+      // Clear input immediately for instant UX
+      onChangeText('')
+      onSend(msg)
     }
   }
 

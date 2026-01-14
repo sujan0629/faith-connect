@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Modal, Pressable, ScrollView } from 'react-native'
+import { View, Text, Modal, Pressable, ScrollView, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -37,7 +37,6 @@ export const ProfileMenuModal: React.FC<ProfileMenuModalProps> = ({
         { label: 'Language', icon: 'language-outline', onPress: () => console.log('Language') },
       ]
     },
-   
     {
       title: 'About',
       items: [
@@ -50,8 +49,18 @@ export const ProfileMenuModal: React.FC<ProfileMenuModalProps> = ({
       title: 'Account',
       items: [
         { label: 'Logout', icon: 'log-out-outline', onPress: () => {
-          onLogout()
-          setTimeout(() => router.replace('/?logout=1'), 100)
+          Alert.alert(
+            'Confirm logout',
+            'Do you really want to log out?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Log out', style: 'destructive', onPress: () => {
+                onClose()
+                onLogout()
+                router.replace('/?logout=1')
+              } }
+            ]
+          )
         }},
       ]
     }

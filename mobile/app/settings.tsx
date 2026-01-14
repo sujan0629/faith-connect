@@ -5,9 +5,10 @@ import { Ionicons } from '@expo/vector-icons'
 import Toast from 'react-native-toast-message'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { settingsApi, UserSettings } from '../api/settings'
-import { useSettingsStore } from '../stores/settingsStore'
+import { useAppUpdate } from '../hooks/useAppUpdate'
 import { toastConfig } from '../components/ToastConfig'
 import { SolidButton } from '../components/Buttons/SolidButton'
+import { useSettingsStore } from '../stores/settingsStore'
 
 export default function SettingsScreen() {
   const router = useRouter()
@@ -15,6 +16,7 @@ export default function SettingsScreen() {
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore()
   const [isSaving, setIsSaving] = useState(false)
   const [localSettings, setLocalSettings] = useState<UserSettings | null>(null)
+  const { status, checkForUpdate, applyOtaUpdate, error } = useAppUpdate()
 
   useEffect(() => {
     fetchSettings()
@@ -261,6 +263,46 @@ export default function SettingsScreen() {
                     )
                   )}
                 </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* App Updates Section */}
+        <View className="bg-white mt-3">
+          <View className="px-6 py-3 border-b border-gray-100">
+            <Text className="text-sm font-semibold text-gray-500 uppercase">
+              App Updates
+            </Text>
+          </View>
+
+          <View className="px-6 py-4">
+            <Text className="text-base font-medium text-gray-900 mb-2">Check for Updates</Text>
+            <Text className="text-sm text-gray-600 mb-4">
+              Status: {status === 'ota-update-available' ? 'Update available' : 
+                       status === 'up-to-date' ? 'Up to date' : 
+                       status === 'checking' ? 'Checking...' : 
+                       status === 'error' ? `Error: ${error}` : 'Tap to check'}
+            </Text>
+            
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={checkForUpdate}
+                disabled={status === 'checking'}
+                className="flex-1 bg-blue-500 px-4 py-3 rounded-xl items-center"
+              >
+                <Text className="text-white font-semibold">
+                  {status === 'checking' ? 'Checking...' : 'Check for Updates'}
+                </Text>
+              </Pressable>
+              
+              {status === 'ota-update-available' && (
+                <Pressable
+                  onPress={applyOtaUpdate}
+                  className="flex-1 bg-green-500 px-4 py-3 rounded-xl items-center"
+                >
+                  <Text className="text-white font-semibold">Apply Update</Text>
+                </Pressable>
               )}
             </View>
           </View>

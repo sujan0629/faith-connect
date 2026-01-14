@@ -2,6 +2,7 @@ import { Role } from '../types/user.types';
 
 export interface CheckEmailDto {
   email: string;
+  role?: Role;
 }
 
 export interface RequestSignupDto {
