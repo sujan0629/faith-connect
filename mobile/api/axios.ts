@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const API_URL = 'https://https://faith-connect-4z69.onrender.com/api' 
+const API_URL = 'https://faith-connect-4z69.onrender.com/api' 
 
 export const api = axios.create({
 	baseURL: API_URL,
