@@ -13,7 +13,7 @@ type TabType = 'All' | 'Mentions'
 
 export default function NotificationsScreen() {
   const router = useRouter()
-  const { items, loading, fetchNotifications, markRead, markAllAsRead, deleteNotification } = useNotificationStore()
+  const { items, fetchNotifications, markRead, deleteNotification } = useNotificationStore()
   const [activeTab, setActiveTab] = useState<TabType>('All')
   const [filters, setFilters] = useState<FilterState>({
     sortBy: 'Recent',

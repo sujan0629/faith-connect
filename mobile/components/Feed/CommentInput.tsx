@@ -1,6 +1,6 @@
-import { View, TextInput, Pressable, Text, Platform, ActivityIndicator } from 'react-native'
+import { View, TextInput, Pressable, Text, ActivityIndicator, Keyboard } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
-import { Keyboard } from 'react-native'
+
 import { useState } from 'react'
 import { useKeyboardHandler } from 'react-native-keyboard-controller'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -11,6 +11,7 @@ import Animated, {
   Extrapolation 
 } from 'react-native-reanimated'
 import type { Comment } from '../../stores/commentStore'
+import { useCommentStore } from '../../stores/commentStore'
 
 interface Props {
   onSubmit: (text: string) => void
@@ -21,6 +22,8 @@ interface Props {
 
 export const CommentInput = ({ onSubmit, isSubmitting = false, replyingTo, onCancelReply }: Props) => {
   const [comment, setComment] = useState('')
+  const storeIsSubmitting = useCommentStore((s) => s.isSubmitting)
+  const submitting = isSubmitting ?? storeIsSubmitting
   const insets = useSafeAreaInsets()
   
   const progress = useSharedValue(0)
@@ -63,7 +66,7 @@ export const CommentInput = ({ onSubmit, isSubmitting = false, replyingTo, onCan
   })
 
   const handleSubmit = () => {
-    if (comment.trim() && !isSubmitting) {
+    if (comment.trim() && !submitting) {
       onSubmit(comment.trim())
       setComment('')
       Keyboard.dismiss()
@@ -104,10 +107,10 @@ export const CommentInput = ({ onSubmit, isSubmitting = false, replyingTo, onCan
             
             <Pressable 
               onPress={handleSubmit}
-              disabled={isSubmitting}
-              className={`rounded-full ml-2 p-2 ${comment.trim() && !isSubmitting ? 'bg-black' : 'bg-transparent'}`}
+              disabled={submitting}
+              className={`rounded-full ml-2 p-2 ${comment.trim() && !submitting ? 'bg-black' : 'bg-transparent'}`}
             >
-              {isSubmitting ? (
+              {submitting ? (
                 <ActivityIndicator size={16} color="white" />
               ) : (
                 <Ionicons 

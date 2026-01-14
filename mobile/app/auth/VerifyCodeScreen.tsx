@@ -15,14 +15,10 @@ import Toast from 'react-native-toast-message';
 import { toastConfig } from '../../components/ToastConfig';
 import { api } from "../../api/axios";
 
-interface RouteParams {
-  email?: string;
-}
-
 export default function VerifyCodeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { email = "", isSignup = "true" } = params;
+  const { email = "" } = params;
 
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isVerifying, setIsVerifying] = useState(false);

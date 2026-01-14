@@ -290,32 +290,6 @@ export default function FaithConnectOnboarding() {
     </View>
   );
 
-  // --- STEP 4: DENOMINATION (leaders only) ---
-  const renderStep4Leader = () => (
-    <View className="mt-8">
-      <Text className="text-xl font-bold text-gray-900">Your denomination</Text>
-      <Text className="mt-2 text-sm text-gray-600">
-        Select your specific tradition within <Text className="font-medium">{faith}</Text>.
-      </Text>
-      
-      <View className="mt-8 flex-row flex-wrap gap-4">
-        {(denominations[faith as keyof typeof denominations] || []).map((item) => (
-          <Pressable
-            key={item}
-            onPress={() => setDenomination(item)}
-            className={`rounded-full px-4 py-2 border ${
-              denomination === item ? 'bg-blue-500 border-blue-500' : 'bg-white border-gray-200'
-            }`}
-          >
-            <Text className={`text-sm font-medium ${denomination === item ? 'text-white' : 'text-gray-700'}`}>
-              {item}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-
   // --- STEP 4: AVATAR (regular users) ---
   const renderStep4Regular = () => renderStep4();
 

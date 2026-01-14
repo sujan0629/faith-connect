@@ -1,9 +1,9 @@
-import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Text, Pressable } from 'react-native'
+import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Pressable } from 'react-native'
 import { useFeedStore } from '../../stores/feedStore'
 import { useAuthStore } from '../../stores/authStore'
 import { VideoView, useVideoPlayer, VideoPlayer } from 'expo-video'
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
-import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from 'expo-router'
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
 import { ReelHeader } from '../../components/Reel/ReelHeader'
 import { ReelActions } from '../../components/Reel/ReelActions'
 import { ReelUserInfo } from '../../components/Reel/ReelUserInfo'
@@ -18,13 +18,13 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 const TAB_BAR_HEIGHT = 85
 
 export default function ReelsScreen() {
-  const { explore, reels: storeReels, toggleLike, toggleSave, setAuthorFaith } = useFeedStore()
+  const { reels: storeReels, toggleLike, toggleSave } = useFeedStore()
   const user = useAuthStore((s) => s.user)
   const { height: WINDOW_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window')
   const VISIBLE_HEIGHT = WINDOW_HEIGHT - TAB_BAR_HEIGHT
   const router = useRouter()
-  const navigation = useNavigation()
   const { reelId } = useLocalSearchParams<{ reelId: string }>()
+
 
   // Initialize feed algorithm for tracking watch events
   const { trackView } = useFeedAlgorithm({
@@ -44,7 +44,7 @@ export default function ReelsScreen() {
         })()
       : baseReels
   }, [reelId, baseReels])
-  const [isMuted, setIsMuted] = useState(false)
+  const [isMuted] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [createReelModalVisible, setCreateReelModalVisible] = useState(false)
 
@@ -64,7 +64,7 @@ export default function ReelsScreen() {
         try {
           player.pause()
           player.release?.()
-        } catch (e) {
+        } catch {
           // Player might already be released
         }
       })
@@ -135,7 +135,7 @@ export default function ReelsScreen() {
         videoPlayers.current.forEach(player => {
           try {
             player.pause()
-          } catch (error) {
+          } catch {
             // Player might be invalidated, ignore
           }
         })
@@ -190,7 +190,7 @@ export default function ReelsScreen() {
             try {
               player.pause()
               player.release?.()
-            } catch (e) {
+            } catch {
               // Already released
             }
             videoPlayers.current.delete(playerId)
@@ -348,7 +348,6 @@ const ReelItem = React.memo(({
       if (watchTimeRef.current > 0) {
         try {
           const videoDuration = reel.videoDuration || 0
-          const completed = videoDuration > 0 && watchTimeRef.current >= videoDuration
           
           await postsApi.trackWatch(reel.id, watchTimeRef.current, videoDuration)
           watchTimeRef.current = 0
@@ -382,7 +381,7 @@ const ReelItem = React.memo(({
       try {
         player.pause()
         player.release?.()
-      } catch (e) {
+      } catch {
         // Already released
       }
       if (batchTimeoutRef.current) {
@@ -502,3 +501,4 @@ const ReelItem = React.memo(({
     </View>
   )
 })
+ReelItem.displayName = 'ReelItem'

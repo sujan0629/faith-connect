@@ -65,7 +65,7 @@ export const CommentItem = ({ comment, onLike, onReply, isReply = false, depth =
       if (diffHours < 24) return `${Math.floor(diffHours)}h`
       if (diffDays < 7) return `${Math.floor(diffDays)}d`
       return date.toLocaleDateString()
-    } catch (error) {
+    } catch {
       return '1h' // Fallback mock date
     }
   }

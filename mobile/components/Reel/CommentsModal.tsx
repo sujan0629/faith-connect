@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -7,12 +7,12 @@ import {
   ScrollView,
   Image,
   TextInput,
-  ActivityIndicator,
-} from 'react-native'
+  Keyboard } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Comment, useCommentStore } from '../../stores/commentStore'
 import { KeyboardStickyView } from 'react-native-keyboard-controller' // Import this
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
 
 interface CommentsModalProps {
   visible: boolean
@@ -31,30 +31,42 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
   onAddComment,
   reelId,
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [localSubmitting, setLocalSubmitting] = useState(false)
   const [commentText, setCommentText] = useState('')
   const insets = useSafeAreaInsets()
-  const fetchComments = useCommentStore((s) => s.fetchComments)
   const commentsByPost = useCommentStore((s) => s.commentsByPost)
   const addComment = useCommentStore((s) => s.addComment)
   const toggleCommentLike = useCommentStore((s) => s.toggleCommentLike)
+  const storeIsSubmitting = useCommentStore((s) => s.isSubmitting)
+  const submitting = storeIsSubmitting || localSubmitting
 
   const storeComments = reelId ? (commentsByPost[reelId] || []) : []
 
+  useEffect(() => {
+    if (submitting) {
+      // clear input and dismiss keyboard when submission begins
+      setCommentText('')
+      Keyboard.dismiss()
+    }
+  }, [submitting])
+
   const handleAddComment = async () => {
     if (!commentText.trim()) return
-    
-    setIsSubmitting(true)
+
     try {
       // Prefer store-based add so it behaves like other comment UIs
       if (reelId) {
         await addComment(reelId, commentText.trim())
       } else {
-        await onAddComment(commentText.trim())
+        setLocalSubmitting(true)
+        try {
+          await onAddComment(commentText.trim())
+        } finally {
+          setLocalSubmitting(false)
+        }
       }
-      setCommentText('')
-    } finally {
-      setIsSubmitting(false)
+    } catch (err) {
+      console.warn('Failed to add comment:', err)
     }
   }
 

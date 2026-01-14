@@ -19,11 +19,6 @@ import { toastConfig } from '../../components/ToastConfig';
 import { api } from "../../api/axios";
 import { useAuthStore } from "../../stores/authStore";
 
-interface RouteParams {
-  email?: string;
-  verificationCode?: string;
-}
-
 export default function SetPasswordScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();

@@ -1,12 +1,10 @@
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
-import { View, Text, ScrollView, Pressable, NativeScrollEvent, NativeSyntheticEvent, Animated, Dimensions, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, Pressable, NativeScrollEvent, NativeSyntheticEvent, Animated, Dimensions, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
-import { useRouter, useLocalSearchParams } from 'expo-router'
-import { Ionicons, Octicons } from '@expo/vector-icons'
-import * as MediaLibrary from 'expo-media-library'
-import * as ImagePicker from 'expo-image-picker'
-import PostCard from '../../components/Feed/PostCard'
+import { useRouter, useLocalSearchParams , useFocusEffect } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { PostCard } from '../../components/Feed/PostCard'
 import ReelCard from '../../components/Reel/ReelCard'
 import { CreatePostCTA } from '../../components/Feed/CreatePostCTA'
 import { HomeHeader } from '../../components/Headers/HomeHeader'
@@ -16,7 +14,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useFeedStore } from '../../stores/feedStore'
 import { useEngagementStore } from '../../stores/engagementStore'
 import { useOfflineStore } from '../../stores/offlineStore'
-import { useFocusEffect } from 'expo-router'
+
 import { toastConfig } from '../../components/ToastConfig'
 import { postsApi } from '../../api/posts'
 import { useFollowStore } from '../../stores/followStore'
@@ -24,9 +22,7 @@ import { useFeedAlgorithm } from '../../hooks/useFeedAlgorithm'
 import { useNetworkSync } from '../../hooks/useNetworkSync'
 import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
 
-const segments = ['Explore', 'Following'] as const
-
-type Segment = (typeof segments)[number]
+type Segment = 'Explore' | 'Following'
 
 export default function HomeScreen() {
   const router = useRouter()
@@ -58,7 +54,7 @@ export default function HomeScreen() {
     if (post) {
       try {
         await trackLike(postId, post.faith)
-      } catch (error) {
+      } catch {
         // Queue the action if offline
         if (isOffline) {
           const { addToQueue } = useOfflineStore.getState()
@@ -79,7 +75,7 @@ export default function HomeScreen() {
     if (post) {
       try {
         await trackSave(postId, post.faith)
-      } catch (error) {
+      } catch {
         // Queue the action if offline
         if (isOffline) {
           const { addToQueue } = useOfflineStore.getState()
@@ -135,7 +131,7 @@ export default function HomeScreen() {
     const loadFeed = async () => {
       try {
         setIsLoading(true)
-        const { isOffline, loadQueue } = useOfflineStore.getState()
+        const { loadQueue } = useOfflineStore.getState()
         
         // Load offline queue on startup
         await loadQueue()
@@ -460,12 +456,6 @@ export default function HomeScreen() {
       })
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handlePublish = () => {
-    if (role === 'leader') {
-      router.push('/(tabs)/create')
     }
   }
 

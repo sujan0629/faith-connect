@@ -1,14 +1,12 @@
-import { View, Text, ScrollView, Pressable, ActivityIndicator, FlatList, Dimensions } from 'react-native'
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeedStore, Post } from '../../stores/feedStore'
-import { LineChart, BarChart, PieChart } from 'react-native-gifted-charts'
+import { BarChart, PieChart } from 'react-native-gifted-charts'
 import { VideoView, useVideoPlayer } from 'expo-video'
-
-const { width } = Dimensions.get('window')
 
 interface PostMetrics {
   totalPosts: number
@@ -256,7 +254,7 @@ export default function LeaderDashboard() {
         <Pressable onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#111111" />
         </Pressable>
-        <Text className="font-bold text-xl text-[#111111]">Leader's Dashboard</Text>
+        <Text className="font-bold text-xl text-[#111111]">Leader&apos;s Dashboard</Text>
         <View className="w-6" />
       </View>
 

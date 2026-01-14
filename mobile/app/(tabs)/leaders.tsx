@@ -159,7 +159,7 @@ export default function LeadersScreen() {
     try {
       await follow(id, user.id);
       Toast.show({ type: 'success', text1: 'Following!', text2: 'You are now following this leader' });
-    } catch (error) {
+    } catch {
       Toast.show({ type: 'error', text1: 'Failed to follow', text2: 'Please try again later' });
     }
   };
@@ -169,7 +169,7 @@ export default function LeadersScreen() {
     try {
       await unfollow(id, user.id);
       Toast.show({ type: 'success', text1: 'Unfollowed', text2: 'You have unfollowed this leader' });
-    } catch (error) {
+    } catch {
       Toast.show({ type: 'error', text1: 'Failed to unfollow', text2: 'Please try again later' });
     }
   };

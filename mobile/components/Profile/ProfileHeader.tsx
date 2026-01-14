@@ -53,7 +53,7 @@ export const ProfileHeader = ({
         <View className={`rounded-full`}>
           <Image
             source={{
-              uri: avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHww'
+              uri: avatar || 'https://via.placeholder.com/150',
             }}
             className="h-24 w-24 rounded-full bg-gray-200"
           />

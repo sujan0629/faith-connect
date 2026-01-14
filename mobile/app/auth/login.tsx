@@ -43,10 +43,6 @@ export default function Login() {
     }
   };
 
-  const handlePasswordLogin = () => {
-    router.push({ pathname: "/auth/PasswordLoginScreen", params: { email: email.trim() } });
-  };
-
   const handleSendMagicLink = async () => {
     if (!email.trim()) {
       Alert.alert("Email required", "Please enter your email to continue.");
@@ -145,7 +141,7 @@ export default function Login() {
           <View className="px-6 pt-6 pb-8">
             <Text className="text-dark text-xl font-bold mb-1 mt-2 text-center">Enter your email</Text>
             <Text className="text-xs mt-2 mb-4 text-center">
-              We'll send you a magic link to sign in.
+              We&apos;ll send you a magic link to sign in.
             </Text>
 
             <TextField
@@ -208,4 +204,4 @@ export default function Login() {
       <Toast config={toastConfig} topOffset={80} />
     </SafeAreaView>
   );
-};;
+}

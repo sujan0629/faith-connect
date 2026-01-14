@@ -66,7 +66,7 @@ export default function EditBioScreen() {
         <View className="flex-1 px-4 py-8">
           <Text className="text-xl font-bold text-gray-900">Change your bio</Text>
           <Text className="mt-2 text-sm text-gray-600">
-            Share what makes you unique and what you're passionate about.
+            Share what makes you unique and what you&apos;re passionate about.
           </Text>
 
           <View className="mt-6">

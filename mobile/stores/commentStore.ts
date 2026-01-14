@@ -24,6 +24,10 @@ interface CommentStoreState {
   // Store replies by commentId
   repliesByCommentId: Record<string, Comment[]>
   
+  // Submission state for comments/replies
+  isSubmitting: boolean
+  setIsSubmitting: (v: boolean) => void
+  
   // Fetch comments for a post
   fetchComments: (postId: string) => Promise<void>
   
@@ -49,6 +53,8 @@ interface CommentStoreState {
 export const useCommentStore = create<CommentStoreState>((set, get) => ({
   commentsByPost: {},
   repliesByCommentId: {},
+  isSubmitting: false,
+  setIsSubmitting: (v: boolean) => set({ isSubmitting: v }),
 
   fetchComments: async (postId: string) => {
     try {
@@ -88,8 +94,11 @@ export const useCommentStore = create<CommentStoreState>((set, get) => ({
 
   addComment: async (postId: string, text: string) => {
     const user = useAuthStore.getState().user
+    // mark submitting globally
+    get().setIsSubmitting(true)
     
     if (!text.trim()) {
+      get().setIsSubmitting(false)
       throw new Error('Comment text is required')
     }
 
@@ -143,6 +152,8 @@ export const useCommentStore = create<CommentStoreState>((set, get) => ({
         text2: error?.response?.data?.message || 'Please try again',
       })
       throw error
+    } finally {
+      get().setIsSubmitting(false)
     }
   },
 
@@ -194,6 +205,9 @@ export const useCommentStore = create<CommentStoreState>((set, get) => ({
 
   addReply: async (postId: string, commentId: string, text: string) => {
     const user = useAuthStore.getState().user
+
+    // mark submitting globally
+    get().setIsSubmitting(true)
 
     if (!text.trim()) {
       throw new Error('Reply text is required')
@@ -282,6 +296,8 @@ export const useCommentStore = create<CommentStoreState>((set, get) => ({
         text2: error?.response?.data?.message || 'Please try again',
       })
       throw error
+    } finally {
+      get().setIsSubmitting(false)
     }
   },
 

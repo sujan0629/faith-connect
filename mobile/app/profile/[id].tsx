@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { View, ScrollView, Text, ActivityIndicator, FlatList, RefreshControl } from 'react-native'
+import { View, ScrollView, Text, RefreshControl, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { ProfileTopBar } from '../../components/Profile/ProfileTopBar'
 import { ProfileHeader } from '../../components/Profile/ProfileHeader'
 import { ProfileTabs, ProfileTab } from '../../components/Profile/ProfileTabs'
-import { ProfileGrid } from '../../components/Profile/ProfileGrid'
 import { ProfileMenuModal } from '../../components/Profile/ProfileMenuModal'
 import { AccountActionModal } from '../../components/Profile/AccountActionModal'
 import { ReportModal } from '../../components/Moderation/ReportModal'
@@ -14,8 +13,10 @@ import { BlockUserModal } from '../../components/Moderation/BlockUserModal'
 import { useAuthStore } from '../../stores/authStore'
 import { useFeedStore } from '../../stores/feedStore'
 import { useFollowStore } from '../../stores/followStore'
+import { useProfileStore } from '../../stores/profileStore'
+import { useChatStore } from '../../stores/chatStore'
 import Toast from 'react-native-toast-message'
-import { api } from '../../api/axios'
+import { ProfileSkeleton } from '../../components/Skeletons/ProfileSkeleton'
 import { usersApi } from '../../api/users'
 import { leadersApi } from '../../api/leaders'
 import { ProfileActions } from '@/components/Profile/ProfileActions'
@@ -30,8 +31,6 @@ export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const updateUser = useAuthStore((s) => s.updateUser)
-  const { explore, following } = useFeedStore()
-  const { addFollowing, removeFollowing } = useFollowStore()
   const profileId = Array.isArray(id) ? id[0] : (id as string | undefined)
   
   const [activeTab, setActiveTab] = useState<ProfileTab>('Posts')
@@ -39,15 +38,21 @@ export default function ProfileScreen() {
   // Determine if this is the user's own profile
   const isOwnProfile = user?.id === profileId
 
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [isBlocked, setIsBlocked] = useState(false)
+  const { addFollowing, removeFollowing, followingIds } = useFollowStore()
+  const isFollowing = profileId ? followingIds.has(profileId) : false
+  const loading = useProfileStore((s) => s.loading)
+  const setGlobalLoading = useProfileStore((s) => s.setLoading)
+  const setProfileCache = useProfileStore((s) => s.setProfileCache)
+  const getProfileCache = useProfileStore((s) => s.getProfileCache)
+  const [isBlocked] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showAccountActionModal, setShowAccountActionModal] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
   const [showBlockModal, setShowBlockModal] = useState(false)
-  const [loading, setLoading] = useState(true)
+  
   const [error, setError] = useState<string | null>(null)
-  const [profile, setProfile] = useState<any | null>(null)
+  const profile = useProfileStore((s) => s.currentProfile)
+  const setProfile = useProfileStore((s) => s.setCurrentProfile)
   const [stats, setStats] = useState<{ followersCount: number; followingCount: number }>({ followersCount: 0, followingCount: 0 })
   const [authorPosts, setAuthorPosts] = useState<Post[]>([])
   const [savedPosts, setSavedPosts] = useState<Post[]>([])
@@ -73,7 +78,8 @@ export default function ProfileScreen() {
       } else if (profileId) {
         const res = await usersApi.getById(profileId)
         setProfile(res)
-        setIsFollowing(res.isFollowing ?? false)
+        if (res.isFollowing) addFollowing(profileId)
+        else removeFollowing(profileId)
         setStats({
           followersCount: res.followersCount ?? 0,
           followingCount: res.followingCount ?? 0,
@@ -106,11 +112,40 @@ export default function ProfileScreen() {
   useEffect(() => {
     let active = true
     const fetchProfile = async () => {
-      setLoading(true)
       setError(null)
+      let didSetLoading = false
+
       try {
+        // Serve from tiny in-memory cache immediately if available
+        if (profileId) {
+          const cached = getProfileCache(profileId)
+          if (cached && active) {
+            setProfile(cached)
+            if (cached.isFollowing) addFollowing(profileId)
+            else removeFollowing(profileId)
+            setStats({
+              followersCount: cached.followersCount ?? 0,
+              followingCount: cached.followingCount ?? 0,
+            })
+            // don't show global loading when serving cached data
+          } else if (active) {
+            setGlobalLoading(true)
+            didSetLoading = true
+          }
+        } else if (isOwnProfile && active && !getProfileCache(user?.id || '')) {
+          setGlobalLoading(true)
+          didSetLoading = true
+        }
+
         if (isOwnProfile && user?.id) {
-          const res = await usersApi.getMe()
+          // parallelize independent calls for speed
+          const [res, myStats, posts, saved, reposts] = await Promise.all([
+            usersApi.getMe(),
+            usersApi.getMyStats(),
+            postsApi.getAuthorPosts(user.id),
+            postsApi.getSavedPosts(),
+            postsApi.getRepostedPosts(),
+          ])
           if (!active) return
           setProfile(res)
           // sync auth store if changed
@@ -118,45 +153,34 @@ export default function ProfileScreen() {
           if (current && JSON.stringify(current) !== JSON.stringify(res)) {
             updateUser(res)
           }
-          const myStats = await usersApi.getMyStats()
-          if (!active) return
           setStats(myStats)
-          
-          // Fetch user's own posts
-          const posts = await postsApi.getAuthorPosts(user.id)
-          if (!active) return
           setAuthorPosts(posts)
-
-          // Fetch user's saved posts
-          const saved = await postsApi.getSavedPosts()
-          if (!active) return
           setSavedPosts(saved)
-
-          // Fetch user's reposted posts
-          const reposts = await postsApi.getRepostedPosts()
-          if (!active) return
           setRepostedPosts(reposts)
+          // cache
+          if (user.id) setProfileCache(user.id, res)
           return
         }
 
         if (profileId) {
-          const res = await usersApi.getById(profileId)
+          // parallelize author fetches
+          const [res, posts, reposts] = await Promise.all([
+            usersApi.getById(profileId),
+            postsApi.getAuthorPosts(profileId),
+            postsApi.getRepostedPosts(20, 0, profileId),
+          ])
           if (!active) return
           setProfile(res)
-          setIsFollowing(res.isFollowing ?? false)
+          if (res.isFollowing) addFollowing(profileId)
+          else removeFollowing(profileId)
           setStats({
             followersCount: res.followersCount ?? 0,
             followingCount: res.followingCount ?? 0,
           })
-          // Fetch author's posts
-          const posts = await postsApi.getAuthorPosts(profileId)
-          if (!active) return
           setAuthorPosts(posts)
-
-          // Fetch user's reposted posts
-          const reposts = await postsApi.getRepostedPosts(20, 0, profileId)
-          if (!active) return
           setRepostedPosts(reposts)
+          // cache
+          setProfileCache(profileId, res)
           return
         }
 
@@ -168,7 +192,7 @@ export default function ProfileScreen() {
           setProfile(isOwnProfile ? user ?? null : null)
         }
       } finally {
-        if (active) setLoading(false)
+        if (active && didSetLoading) setGlobalLoading(false)
       }
     }
 
@@ -178,20 +202,14 @@ export default function ProfileScreen() {
     }
   }, [profileId, isOwnProfile, user?.id, updateUser])
 
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="small" color="#222" />
-      </SafeAreaView>
-    )
-  }
+  
 
   const displayProfile = profile || (isOwnProfile ? user : null)
-  const displayName = displayProfile?.name || 'FaithConnect user'
-  const displayUsername = displayProfile?.username || displayProfile?.email?.split('@')[0] || 'faithconnect'
+  const displayName = displayProfile?.name || 'User not found'
+  const displayUsername = displayProfile?.username || displayProfile?.email?.split('@')[0] || 'notfound'
   const displayAvatar = displayProfile?.avatar
-  const displayFaith = displayProfile?.faith || 'Christianity'
-  const displayRole = displayProfile?.role || 'worshiper'
+  const displayFaith = displayProfile?.faith || 'Unknown'
+  const displayRole = displayProfile?.role || 'Unknown'
   const isLeader = displayRole === 'leader'
 
   // Filter posts based on active tab
@@ -211,13 +229,21 @@ export default function ProfileScreen() {
         return authorPosts
     }
   }
+  
+        if (loading) {
+          return (
+            <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+              <ProfileSkeleton />
+            </SafeAreaView>
+          )
+        }
+  
 
   const handleFollowPress = async () => {
     try {
       if (isFollowing) {
         await leadersApi.unfollowLeader(profileId!)
         removeFollowing(profileId!)
-        setIsFollowing(false)
         Toast.show({
           type: 'success',
           text1: 'Unfollowed',
@@ -226,7 +252,7 @@ export default function ProfileScreen() {
       } else {
         await leadersApi.followLeader(profileId!)
         addFollowing(profileId!)
-        setIsFollowing(true)
+        
         Toast.show({
           type: 'success',
           text1: 'Following',
@@ -243,7 +269,7 @@ export default function ProfileScreen() {
     }
   }
 
-  const { createThread } = require('../../stores/chatStore').useChatStore.getState();
+  const { createThread } = useChatStore.getState()
   const handleMessagePress = async () => {
     Toast.show({
       type: 'info',
@@ -275,18 +301,6 @@ export default function ProfileScreen() {
       text1: 'Contact',
       text2: 'Opening contact options...',
     })
-  }
-
-  const handleSharePress = () => {
-    Toast.show({
-      type: 'success',
-      text1: 'Share',
-      text2: 'Profile link copied!',
-    })
-  }
-
-  const handlePostPress = (postId: string) => {
-    router.push(`/posts/${postId}` as any)
   }
 
   const handleStatsPress = (type: 'posts' | 'followers' | 'following') => {

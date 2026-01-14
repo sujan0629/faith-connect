@@ -1,10 +1,9 @@
-import { View, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
+import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFeedStore } from '../../stores/feedStore'
 import { useFollowStore } from '../../stores/followStore'
 import { useEngagementStore } from '../../stores/engagementStore'
-import { useAuthStore } from '../../stores/authStore'
 import { useCommentStore } from '../../stores/commentStore'
 import { PostDetail } from '../../components/Feed/PostDetail'
 import { CommentsList } from '../../components/Feed/CommentsList'
@@ -21,14 +20,12 @@ import Toast from 'react-native-toast-message'
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams()
-  const { explore, following, toggleLike, toggleSave } = useFeedStore()
+  const { explore, following, addPost } = useFeedStore()
   const { setFollowingIds } = useFollowStore()
   const { setLikes, setSaves, setReposts, toggleLike: engagementToggleLike, toggleSave: engagementToggleSave } = useEngagementStore()
   const { commentsByPost, fetchComments, addComment, toggleCommentLike } = useCommentStore()
   const [post, setPost] = useState<Post | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const isSubmittingComment = useCommentStore((s) => s.isSubmitting)
   const [showReportModal, setShowReportModal] = useState(false)
   const [showBlockModal, setShowBlockModal] = useState(false)
 
@@ -71,12 +68,7 @@ export default function PostDetailScreen() {
     const loadPost = async () => {
       try {
         // Only load if we don't already have a post
-        if (post) {
-          setLoading(false)
-          return
-        }
-        
-        setLoading(true)
+        if (post) return
         // First try to find from store
         const storedPost = [...explore, ...following].find((p) => p.id === id)
         if (storedPost) {
@@ -85,16 +77,7 @@ export default function PostDetailScreen() {
           if (storedPost.isLiked) setLikes([storedPost.id])
           if (storedPost.isSaved) setSaves([storedPost.id])
           if (storedPost.isReposted) setReposts([storedPost.id])
-          // Fetch following status from API
-          if (storedPost.authorId) {
-            try {
-              const followingLeaders = await leadersApi.getFollowing()
-              const isFollowingLeader = followingLeaders.some(l => l.id === storedPost.authorId)
-              setIsFollowing(isFollowingLeader)
-            } catch (err) {
-              console.warn('Failed to fetch following status:', err)
-            }
-          }
+          // following status is handled by followStore (initialized on mount)
           return
         }
         
@@ -103,20 +86,16 @@ export default function PostDetailScreen() {
           const postId = Array.isArray(id) ? id[0] : id
           const fetchedPost = await postsApi.getPost(postId)
           setPost(fetchedPost)
+          try {
+            addPost(fetchedPost)
+          } catch {
+            // best-effort cache; ignore errors
+          }
           // Initialize engagement store with post state
           if (fetchedPost.isLiked) setLikes([fetchedPost.id])
           if (fetchedPost.isSaved) setSaves([fetchedPost.id])
           if (fetchedPost.isReposted) setReposts([fetchedPost.id])
-          // Fetch following status from API
-          if (fetchedPost.authorId) {
-            try {
-              const followingLeaders = await leadersApi.getFollowing()
-              const isFollowingLeader = followingLeaders.some(l => l.id === fetchedPost.authorId)
-              setIsFollowing(isFollowingLeader)
-            } catch (err) {
-              console.warn('Failed to fetch following status:', err)
-            }
-          }
+          // following status is handled by followStore (initialized on mount)
         }
       } catch (error) {
         console.error('Failed to load post:', error)
@@ -125,11 +104,9 @@ export default function PostDetailScreen() {
           text1: 'Failed to load post',
           text2: 'Please try again',
         })
-      } finally {
-        setLoading(false)
       }
     }
-    
+
     loadPost()
   }, [id])
 
@@ -151,8 +128,6 @@ export default function PostDetailScreen() {
     if (!post?.id || !text.trim()) return
     
     try {
-      setIsSubmittingComment(true)
-      
       if (replyingToCommentId) {
         // Add reply to comment
         await useCommentStore.getState().addReply(post.id, replyingToCommentId, text)
@@ -163,8 +138,6 @@ export default function PostDetailScreen() {
       }
     } catch (error) {
       console.warn('Failed to add comment/reply:', error)
-    } finally {
-      setIsSubmittingComment(false)
     }
   }
   
@@ -173,13 +146,7 @@ export default function PostDetailScreen() {
     // In a real app, you'd focus the input here
   }
 
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="small" color="#222" />
-      </SafeAreaView>
-    )
-  }
+  
 
   if (!post) {
     return <SafeAreaView className="flex-1 bg-white" />
@@ -245,8 +212,6 @@ export default function PostDetailScreen() {
             post={post} 
             onLike={handleLike}
             onSave={handleSave}
-            isFollowing={isFollowing}
-            onFollowChange={setIsFollowing}
           />
           <View className="mt-4">
             <CommentsList 

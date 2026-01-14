@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView } from 'react-native'
+import { View, Text, Pressable } from 'react-native'
 
 const tabs = ['Posts', 'Reels', 'Saved', 'Repost', 'Replies'] as const
 export type ProfileTab = (typeof tabs)[number]

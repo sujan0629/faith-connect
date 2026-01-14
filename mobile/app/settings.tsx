@@ -3,8 +3,8 @@ import { View, Text, ScrollView, Switch, Pressable, ActivityIndicator } from 're
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import Toast from 'react-native-toast-message'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { settingsApi, UserSettings } from '../api/settings'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { UserSettings } from '../api/settings'
 import { useAppUpdate } from '../hooks/useAppUpdate'
 import { toastConfig } from '../components/ToastConfig'
 import { SolidButton } from '../components/Buttons/SolidButton'
@@ -12,7 +12,6 @@ import { useSettingsStore } from '../stores/settingsStore'
 
 export default function SettingsScreen() {
   const router = useRouter()
-  const insets = useSafeAreaInsets()
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore()
   const [isSaving, setIsSaving] = useState(false)
   const [localSettings, setLocalSettings] = useState<UserSettings | null>(null)

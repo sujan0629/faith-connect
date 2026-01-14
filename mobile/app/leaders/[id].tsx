@@ -30,7 +30,11 @@ export default function LeaderProfile() {
       Toast.show({ type: 'error', text1: 'Sign in first' })
       return
     }
-    leader.isFollowed ? unfollow(leader.id, user.id) : follow(leader.id, user.id)
+    if (leader.isFollowed) {
+      unfollow(leader.id, user.id)
+    } else {
+      follow(leader.id, user.id)
+    }
   }
 
   return (

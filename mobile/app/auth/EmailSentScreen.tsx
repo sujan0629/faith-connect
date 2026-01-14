@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -16,12 +16,7 @@ import { SolidButton } from "@/components/Buttons/SolidButton";
 import emailsent from '../../assets/images/emailsent.png';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../../components/ToastConfig';
-import { useEffect } from 'react';
 
-interface RouteParams {
-  email?: string;
-  isSignup?: string;
-}
 
 const emailApps = [
   { name: "Gmail", iosScheme: "googlegmail://", androidPackage: "com.google.android.gm", fallback: "https://mail.google.com" },
@@ -45,7 +40,7 @@ const openEmailApp = async (app: typeof emailApps[0]) => {
         try {
           await Linking.openURL(intentURL);
           return;
-        } catch (error) {
+        } catch {
           // fall through to fallback handling
         }
       }

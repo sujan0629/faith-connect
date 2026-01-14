@@ -1,4 +1,4 @@
-import { Text, View, Image, StyleSheet } from 'react-native'
+import { Text, View, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { BlurView } from 'expo-blur'
 import type { BaseToastProps, ToastConfig } from 'react-native-toast-message'

@@ -1,5 +1,4 @@
 import { View, Text, Pressable, Image } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useAuthStore } from '../../stores/authStore'
 import NotificationFilterDropdown from '../Notifications/NotificationFilterDropdown'

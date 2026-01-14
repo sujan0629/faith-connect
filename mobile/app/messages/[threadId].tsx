@@ -7,8 +7,8 @@ import {
   KeyboardGestureArea,
   useKeyboardHandler
 } from 'react-native-keyboard-controller'
-import { useSharedValue, useAnimatedStyle, interpolate } from 'react-native-reanimated'
-import Animated from 'react-native-reanimated'
+import Animated, { useSharedValue, useAnimatedStyle, interpolate } from 'react-native-reanimated'
+
 
 import { ChatHeader } from '../../components/Messages/ChatHeader'
 import { MessageBubble } from '../../components/Messages/MessageBubble'

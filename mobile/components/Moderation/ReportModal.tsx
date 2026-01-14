@@ -5,8 +5,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  ActivityIndicator,
-  TextInput,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -132,7 +130,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
 
             {/* Reason Selection */}
             <Text className="text-base font-semibold text-gray-900 mb-3">
-              What's the problem?
+              What&apos;s the problem?
             </Text>
 
             <View className="gap-2 mb-6">

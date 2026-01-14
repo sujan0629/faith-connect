@@ -7,8 +7,7 @@ import {
   TextInput,
   ScrollView,
   Image,
-  ActivityIndicator,
-  Platform,
+  Platform
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SolidButton } from "../Buttons/SolidButtonTwo";

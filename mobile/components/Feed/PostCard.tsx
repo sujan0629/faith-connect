@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image, ActivityIndicator } from 'react-native'
+import { View, Text, Pressable, Image } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { Post } from '../../stores/feedStore'
 import { VideoView, useVideoPlayer } from 'expo-video'
@@ -24,11 +24,10 @@ const formatCount = (num: number | undefined | null) => {
 }
 
 export const PostCard = ({ item, onLike, onSave, isVisible = false, isProfileView = false }: Props) => {
-  const [paused, setPaused] = useState(true)
-  const [imageLoading, setImageLoading] = useState(true)
   const [showReportModal, setShowReportModal] = useState(false)
   const [showBlockModal, setShowBlockModal] = useState(false)
   const [showActionMenu, setShowActionMenu] = useState(false)
+  const [imageLoading, setImageLoading] = useState(true)
   const router = useRouter()
   const { isLiked, isSaved, isReposted, toggleLike, toggleSave, toggleRepost } = useEngagementStore()
 
@@ -48,7 +47,7 @@ export const PostCard = ({ item, onLike, onSave, isVisible = false, isProfileVie
       try {
         player.pause()
         player.release?.()
-      } catch (e) {
+      } catch {
         // Player might already be released
       }
     }

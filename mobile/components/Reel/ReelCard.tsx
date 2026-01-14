@@ -76,8 +76,8 @@ const ReelCard = ({ item, onLike, onSave, isVisible = true, isScreenFocused = tr
       if (accumulatedTime % 2 === 0 || (item.videoDuration && accumulatedTime >= item.videoDuration)) {
         try {
           await postsApi.trackWatch(item.id, accumulatedTime, item.videoDuration || 60)
-        } catch (error) {
-          console.error('Failed to track watch event:', error)
+        } catch {
+          // Handle tracking error silently
         }
       }
     }
@@ -95,7 +95,7 @@ const ReelCard = ({ item, onLike, onSave, isVisible = true, isScreenFocused = tr
       try {
         player.pause()
         player.release?.()
-      } catch (e) {
+      } catch {
         // Player might already be released
       }
     }

@@ -4,7 +4,6 @@ import {
   Text,
   Modal,
   Pressable,
-  ActivityIndicator,
   Image,
   ScrollView,
 } from 'react-native'

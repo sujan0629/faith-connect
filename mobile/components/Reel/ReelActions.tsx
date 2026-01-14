@@ -2,9 +2,9 @@ import { View, Text, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useState, useEffect } from 'react'
 import { CommentsModal } from './CommentsModal'
-import { Comment } from '../../stores/commentStore'
+import { Comment , useCommentStore } from '../../stores/commentStore'
 import { useEngagementStore } from '../../stores/engagementStore'
-import { useCommentStore } from '../../stores/commentStore'
+
 import { ReelActionModal } from './ReelActionModal'
 import { ReportModal } from '../Moderation/ReportModal'
 import { BlockUserModal } from '../Moderation/BlockUserModal'
@@ -61,7 +61,7 @@ export const ReelActions = ({
   const [localLikes, setLocalLikes] = useState(reel.likes)
   const [localSaves, setLocalSaves] = useState(reel.saves)
   const [localReposts, setLocalReposts] = useState(reel.reposts || 0)
-  const { isLiked, isSaved, isReposted, toggleLike, toggleSave, toggleRepost, addComment } = useEngagementStore()
+  const { isLiked, isSaved, isReposted, toggleLike, toggleSave, toggleRepost } = useEngagementStore()
 
   // Sync local state when reel prop changes (from feed store updates)
   useEffect(() => {
@@ -77,7 +77,7 @@ export const ReelActions = ({
     // Ensure comments are loaded into store for modal
     try {
       useCommentStore.getState().fetchComments(reel.id).catch(() => {})
-    } catch (e) {}
+    } catch {}
     setShowCommentsModal(true)
   }
 
