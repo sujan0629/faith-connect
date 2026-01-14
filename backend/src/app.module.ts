@@ -10,6 +10,7 @@ import { LeadersModule } from './leaders/leaders.module';
 import { MessagesModule } from './messages/messages.module';
 import { PostsModule } from './posts/posts.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     MessagesModule,
     PostsModule,
     NotificationsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -84,9 +84,14 @@ export default function SetPasswordScreen() {
         setIsAuthenticating(false);
       }, 400);
     } catch (error: any) {
-      Alert.alert("Error", error?.response?.data?.message || "Something went wrong. Please try again.");
+      console.warn('[SetPassword] error:', error);
+      const message = error?.response?.data?.message || error?.message || 'Something went wrong. Please try again.';
+      Toast.show({ type: 'error', text1: 'Error', text2: message });
+      // Also show a fallback Alert for visibility on older devices
+      Alert.alert('Error', message);
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (

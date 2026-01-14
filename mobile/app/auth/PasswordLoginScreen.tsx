@@ -51,7 +51,12 @@ export default function PasswordLoginScreen() {
         setIsAuthenticating(false);
       }, 400);
     } catch (error: any) {
-      Alert.alert("Login Failed", error?.response?.data?.message || "Invalid credentials. Please try again.");
+      console.warn('[PasswordLogin] login error:', error);
+      const message = error?.response?.data?.message || error?.message || 'Network error. Please try again.';
+      Toast.show({ type: 'error', text1: 'Login Failed', text2: message });
+      // Also show a fallback Alert for visibility on older devices
+      Alert.alert('Login Failed', message);
+      setIsAuthenticating(false);
     } finally {
       setIsLoggingIn(false);
     }

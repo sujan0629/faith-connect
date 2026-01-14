@@ -49,3 +49,12 @@ NestJS + MongoDB backend implementing the auth and onboarding flow from AuthCont
 
 - Emails and uploads log a warning and skip if credentials are missing (Resend/Cloudinary).
 - JWT secrets fallback to dev defaults; set real secrets before deploying.
+
+## Deployment / Keep-alive
+
+- On free hosting tiers (Render, Heroku free, etc.) the instance may "sleep" after inactivity. The first request after a sleep can fail or take long while the instance cold-starts. To reduce user-facing failures we recommend:
+	- Add a lightweight uptime ping (e.g. UptimeRobot, cron, or GitHub Actions) to periodically `GET /api/health` (every 5–10 minutes) to keep the service warm.
+	- Alternatively upgrade to an "always on" plan from your provider.
+	- The app exposes `GET /api/health` which returns a small 200 response and is suitable for pings.
+
+These measures avoid cold-start delays which can cause the mobile app's first request to fail silently.

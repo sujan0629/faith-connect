@@ -4,7 +4,7 @@ const API_URL = 'https://faith-connect-4z69.onrender.com/api'
 
 export const api = axios.create({
 	baseURL: API_URL,
-	timeout: 60000, // 30 seconds for general requests
+	timeout: 60000, // 60 seconds for general requests
 })
 
 let accessToken: string | null = null
