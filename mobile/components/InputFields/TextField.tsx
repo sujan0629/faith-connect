@@ -23,7 +23,7 @@ export const TextField = ({ label, placeholder, value, onChangeText, multiline, 
         onChangeText={onChangeText}
         multiline={multiline}
         secureTextEntry={secureTextEntry}
-        style={multiline ? { minHeight: 96, textAlignVertical: 'top' } : undefined}
+        style={multiline ? { minHeight: 96, textAlignVertical: 'top' } : { textAlignVertical: 'center' }}
       />
       {rightIcon && (
         <Pressable onPress={onRightIconPress} className="ml-2">

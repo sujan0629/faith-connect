@@ -51,7 +51,7 @@ export const ProfileMenuModal: React.FC<ProfileMenuModalProps> = ({
       items: [
         { label: 'Logout', icon: 'log-out-outline', onPress: () => {
           onLogout()
-          setTimeout(() => router.replace('/'), 100)
+          setTimeout(() => router.replace('/?logout=1'), 100)
         }},
       ]
     }

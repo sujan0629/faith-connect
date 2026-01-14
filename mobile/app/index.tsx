@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router'
+import { Link, useRouter, useLocalSearchParams } from 'expo-router'
 import { View, Text, Image, Pressable, ActivityIndicator } from 'react-native'
 import { useAuthStore } from '../stores/authStore'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -9,6 +9,7 @@ import * as Notifications from 'expo-notifications'
 
 export default function Landing() {
     const router = useRouter()
+    const params = useLocalSearchParams()
     const setRolePreference = useAuthStore((s) => s.setRolePreference)
     const { isAuthenticated, user, isHydrated, hydrate } = useAuthStore()
     const insets = useSafeAreaInsets()
@@ -46,12 +47,14 @@ export default function Landing() {
     }, [])
 
     useEffect(() => {
+        if (params.logout) return; // Skip redirect if just logged out
+        
         if (isHydrated && isAuthenticated && user?.onboardingCompleted) {
             router.replace('/(tabs)/home')
         } else if (isHydrated && isAuthenticated && !user?.onboardingCompleted) {
             router.replace('/onboarding/profile')
         }
-    }, [isHydrated, isAuthenticated, user?.onboardingCompleted])
+    }, [isHydrated, isAuthenticated, user?.onboardingCompleted, params.logout])
 
     if (!isHydrated) {
         return (
@@ -113,7 +116,7 @@ export default function Landing() {
                     {/* Footer Links */}
                     <View className="px-6">
         <Text className="text-[11px] text-center leading-5">
-            If you have any questions, <Text className="font-semibold">visit our Help Center</Text>.
+            For any questions, please <Text className="font-semibold">visit our Help Center</Text>.
         </Text>
     </View>
                 </View>

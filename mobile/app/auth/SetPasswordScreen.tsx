@@ -85,7 +85,10 @@ export default function SetPasswordScreen() {
       }, 400);
     } catch (error: any) {
       console.warn('[SetPassword] error:', error);
-      const message = error?.response?.data?.message || error?.message || 'Something went wrong. Please try again.';
+      const rawMessage = error?.response?.data?.message;
+      const message = Array.isArray(rawMessage) 
+        ? rawMessage.join(', ')
+        : rawMessage || error?.message || 'Something went wrong. Please try again.';
       Toast.show({ type: 'error', text1: 'Error', text2: message });
       // Also show a fallback Alert for visibility on older devices
       Alert.alert('Error', message);

@@ -38,6 +38,11 @@ export default function PasswordLoginScreen() {
       return;
     }
 
+    if (password.length < 8) {
+      Alert.alert("Invalid Password", "Password must be at least 8 characters long");
+      return;
+    }
+
     setIsLoggingIn(true);
 
     try {
