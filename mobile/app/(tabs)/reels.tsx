@@ -1,9 +1,10 @@
-import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Pressable } from 'react-native'
+import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Pressable, Text } from 'react-native'
 import { useFeedStore } from '../../stores/feedStore'
 import { useAuthStore } from '../../stores/authStore'
 import { VideoView, useVideoPlayer, VideoPlayer } from 'expo-video'
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router'
+import { useLocalSearchParams, useFocusEffect } from 'expo-router'
+import { useDebouncedRouter } from '../../hooks/useDebounce'
 import { ReelHeader } from '../../components/Reel/ReelHeader'
 import { ReelActions } from '../../components/Reel/ReelActions'
 import { ReelUserInfo } from '../../components/Reel/ReelUserInfo'
@@ -13,6 +14,9 @@ import { useFeedAlgorithm } from '../../hooks/useFeedAlgorithm'
 import { ReelSkeleton } from '@/components/Skeletons/ReelSkeleton'
 import { postsApi } from '../../api/posts'
 import { useOfflineStore } from '../../stores/offlineStore'
+import { useNetworkSync } from '../../hooks/useNetworkSync'
+import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
+import Toast from 'react-native-toast-message'
 import Ionicons from '@expo/vector-icons/Ionicons'
 
 const TAB_BAR_HEIGHT = 85
@@ -22,10 +26,10 @@ export default function ReelsScreen() {
   const user = useAuthStore((s) => s.user)
   const { height: WINDOW_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window')
   const VISIBLE_HEIGHT = WINDOW_HEIGHT - TAB_BAR_HEIGHT
-  const router = useRouter()
+  const router = useDebouncedRouter()
   const { reelId } = useLocalSearchParams<{ reelId: string }>()
-
-
+  const { isOffline } = useNetworkSync()
+  const { isSyncing, syncError } = useOfflineStore()
   // Initialize feed algorithm for tracking watch events
   const { trackView } = useFeedAlgorithm({
     autoRank: true,

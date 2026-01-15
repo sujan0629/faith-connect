@@ -1,6 +1,8 @@
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
+import { useDebouncedRouter } from '../../hooks/useDebounce'
 import { ScrollView, Text, View, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { Stack } from 'expo-router'
 import { TopBar } from '../../components/Headers/TopBar'
 import { useLeaderStore } from '../../stores/leaderStore'
 import { useFeedStore } from '../../stores/feedStore'
@@ -9,7 +11,7 @@ import Toast from 'react-native-toast-message'
 
 export default function LeaderProfile() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const router = useRouter()
+  const router = useDebouncedRouter()
   const { leaders, follow, unfollow } = useLeaderStore()
   const { explore } = useFeedStore()
   const user = useAuthStore((s) => s.user)
@@ -38,8 +40,15 @@ export default function LeaderProfile() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-[#050914]" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <TopBar title={leader.name ?? ''} subtitle={leader.faith ?? ''} onBack={() => router.back()} />
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: false,
+          gestureEnabled: true,
+        }}
+      />
+      <ScrollView className="flex-1 bg-[#050914]" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+        <TopBar title={leader.name ?? ''} subtitle={leader.faith ?? ''} onBack={() => router.back()} />
 
       <View className="rounded-3xl border border-white/10 bg-white/5 p-4">
         <Text className="text-sm text-cyan-300">{leader.faith}</Text>
@@ -83,6 +92,7 @@ export default function LeaderProfile() {
           <Text className="text-sm text-slate-200">No posts yet from this leader.</Text>
         </View>
       ) : null}
-    </ScrollView>
+      </ScrollView>
+    </>
   )
 }

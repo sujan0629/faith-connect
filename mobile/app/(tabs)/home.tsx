@@ -20,12 +20,13 @@ import { postsApi } from '../../api/posts'
 import { useFollowStore } from '../../stores/followStore'
 import { useFeedAlgorithm } from '../../hooks/useFeedAlgorithm'
 import { useNetworkSync } from '../../hooks/useNetworkSync'
+import { useDebouncedRouter } from '../../hooks/useDebounce'
 import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
 
 type Segment = 'Explore' | 'Following'
 
 export default function HomeScreen() {
-  const router = useRouter()
+  const router = useDebouncedRouter()
   const params = useLocalSearchParams()
   const [segment, setSegment] = useState<Segment>('Explore')
   const { explore, following, toggleLike, toggleSave, setFeed, setFollowing, setReels, setAuthorFaith } = useFeedStore()
@@ -113,23 +114,29 @@ export default function HomeScreen() {
   )
 
   // Refetch following feed when follow state changes
+  const followingIds = useFollowStore((state) => state.followingIds)
   useEffect(() => {
     const refetchFollowing = async () => {
       try {
-        const followingPosts = await postsApi.getFollowing(50, 0)
+        const followingPosts = await postsApi.getFollowing(20, 0)
         setFollowing(followingPosts)
+        await cacheFeedForOffline('following_posts', followingPosts)
       } catch (error) {
         console.error('Failed to refetch following feed:', error)
+        // Load from cache if fails
+        const cached = await getCachedFeedForOffline('following_posts')
+        if (cached) setFollowing(cached)
       }
     }
     
     refetchFollowing()
-  }, [useFollowStore((state) => state.followingIds), setFollowing])
+  }, [followingIds, setFollowing])
 
   // Load feed data on mount
   useEffect(() => {
     const loadFeed = async () => {
       try {
+        const startTime = Date.now()
         setIsLoading(true)
         const { loadQueue } = useOfflineStore.getState()
         
@@ -137,25 +144,16 @@ export default function HomeScreen() {
         await loadQueue()
 
         try {
-          const [feedPosts, followingPosts, reels] = await Promise.all([
-            postsApi.getFeed(50, 0),
-            postsApi.getFollowing(50, 0),
-            postsApi.getReels(50, 0),
-          ])
+          // Load explore feed first (critical for initial render)
+          console.log('[Feed] Loading explore feed...')
+          const feedPosts = await postsApi.getFeed(20, 0)
+          const exploreTime = Date.now()
+          console.log(`[Feed] Explore feed loaded in ${exploreTime - startTime}ms`)
           
-          // Cache feed for offline access
-          await Promise.all([
-            cacheFeedForOffline('explore_posts', feedPosts),
-            cacheFeedForOffline('following_posts', followingPosts),
-            cacheFeedForOffline('reels', reels),
-          ])
-
-          // Set explore feed with all posts
           setFeed(feedPosts)
-          // Set following feed with posts from followed users
-          setFollowing(followingPosts)
-          // Set reels separately
-          setReels(reels)
+          
+          // Cache explore feed
+          await cacheFeedForOffline('explore_posts', feedPosts)
           
           // Cache author faiths for scoring
           feedPosts.forEach((post) => {
@@ -164,42 +162,39 @@ export default function HomeScreen() {
             }
           })
           
-          // Initialize engagement store with fetched posts
-          const allPosts = [...feedPosts, ...followingPosts, ...reels]
-          const likedIds = allPosts.filter(p => p.isLiked).map(p => p.id)
-          const savedIds = allPosts.filter(p => p.isSaved).map(p => p.id)
-          const repostedIds = allPosts.filter(p => p.isReposted).map(p => p.id)
+          // Initialize engagement store with explore posts
+          const likedIds = feedPosts.filter(p => p.isLiked).map(p => p.id)
+          const savedIds = feedPosts.filter(p => p.isSaved).map(p => p.id)
+          const repostedIds = feedPosts.filter(p => p.isReposted).map(p => p.id)
           
           setLikes(likedIds)
           setSaves(savedIds)
           setReposts(repostedIds)
 
-          // Perform ranking on initial load
+          // Perform ranking on explore feed (critical)
           if (user?.id) {
             performRanking('explore')
-            performRanking('following')
-            performRanking('reels')
           }
+          
+          console.log(`[Feed] Initial render ready in ${Date.now() - startTime}ms - loading following/reels in background`)
+          
+          // Load following and reels in background (not blocking)
+          loadFollowingAndReels()
+          
         } catch (fetchError) {
           // If offline or network error, try to load from cache
           console.warn('Network error, attempting to load from cache:', fetchError)
           
-          const [cachedExplore, cachedFollowing, cachedReels] = await Promise.all([
-            getCachedFeedForOffline('explore_posts'),
-            getCachedFeedForOffline('following_posts'),
-            getCachedFeedForOffline('reels'),
-          ])
+          const cachedExplore = await getCachedFeedForOffline('explore_posts')
 
-          if (cachedExplore || cachedFollowing) {
+          if (cachedExplore) {
             Toast.show({
               type: 'info',
               text1: 'Offline Mode',
               text2: 'Showing cached content',
             })
 
-            if (cachedExplore) setFeed(cachedExplore)
-            if (cachedFollowing) setFollowing(cachedFollowing)
-            if (cachedReels) setReels(cachedReels)
+            setFeed(cachedExplore)
           } else {
             Toast.show({
               type: 'error',
@@ -221,6 +216,42 @@ export default function HomeScreen() {
     }
     loadFeed()
   }, [])
+
+  // Load following and reels in background (deferred)
+  const loadFollowingAndReels = async () => {
+    try {
+      const [followingPosts, reels] = await Promise.all([
+        postsApi.getFollowing(20, 0),
+        postsApi.getReels(20, 0),
+      ])
+
+      setFollowing(followingPosts)
+      setReels(reels)
+      
+      // Cache following and reels
+      await Promise.all([
+        cacheFeedForOffline('following_posts', followingPosts),
+        cacheFeedForOffline('reels', reels),
+      ])
+
+      // Perform ranking on following and reels after initial render
+      if (user?.id) {
+        performRanking('following')
+        performRanking('reels')
+      }
+    } catch (error) {
+      console.warn('Failed to load following and reels in background:', error)
+      
+      // Try to load from cache
+      const [cachedFollowing, cachedReels] = await Promise.all([
+        getCachedFeedForOffline('following_posts'),
+        getCachedFeedForOffline('reels'),
+      ])
+
+      if (cachedFollowing) setFollowing(cachedFollowing)
+      if (cachedReels) setReels(cachedReels)
+    }
+  }
 
   // Cleanup on unmount
   useEffect(() => {

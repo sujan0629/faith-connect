@@ -13,7 +13,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from '../../stores/authStore'
 import { SolidButton } from "../../components/Buttons/SolidButton";
 import { TextField } from "../../components/InputFields/TextField";
-import { useRouter } from "expo-router";
+import { useDebouncedRouter } from "../../hooks/useDebounce";
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../../components/ToastConfig';
 import { api } from "../../api/axios";
@@ -21,7 +21,7 @@ import { CheckEmailSchema } from '@faithconnect/shared';
 import { useZodValidation } from '../../hooks/useZodValidation';
 
 export default function Login() {
-  const router = useRouter();
+  const router = useDebouncedRouter();
   const { isAuthenticated, user, rolePreference } = useAuthStore()
   const [email, setEmail] = useState("");
   const [magicLinkSending, setMagicLinkSending] = useState(false);

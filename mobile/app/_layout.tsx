@@ -47,12 +47,17 @@ export default function RootLayout() {
   useEffect(() => {
     if (Platform.OS === "android") {
       NavigationBar.setBackgroundColorAsync("#FFFFFF").catch(() => {});
-      // Verify Firebase setup on app start
-      verifyFirebaseSetup().then((result) => {
-        if (!result.isConfigured) {
-          console.error("Firebase not properly configured:", result.issues);
-        }
-      });
+      // Defer Firebase verification to not block initial load
+      // Run it after a short delay so it doesn't impact app startup
+      const timer = setTimeout(() => {
+        verifyFirebaseSetup().then((result) => {
+          if (!result.isConfigured) {
+            console.error("Firebase not properly configured:", result.issues);
+          }
+        });
+      }, 3000); // Defer for 3 seconds after app loads
+      
+      return () => clearTimeout(timer);
     }
   }, []);
 

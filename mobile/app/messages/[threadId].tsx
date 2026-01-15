@@ -1,4 +1,6 @@
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
+import { useDebouncedRouter } from '../../hooks/useDebounce'
+import { Stack } from 'expo-router'
 import { useState, useRef, useEffect } from 'react'
 import { View, Text, FlatList, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -19,7 +21,7 @@ import Toast from 'react-native-toast-message'
 
 export default function ChatThread() {
   const { threadId } = useLocalSearchParams<{ threadId: string }>()
-  const router = useRouter()
+  const router = useDebouncedRouter()
   const insets = useSafeAreaInsets()
   
   const { threads, messages, sendMessage, fetchThreads, fetchMessages } = useChatStore()
@@ -98,20 +100,27 @@ export default function ChatThread() {
   }
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: 'white' }}
-      keyboardVerticalOffset={0} 
-    >
-      {/* --- Header --- */}
-      <View style={{ paddingTop: insets.top }} className="bg-white border-b border-gray-100 z-10">
-        <ChatHeader
-          peerName={thread.peerName}
-          avatar={thread.avatar}
-          isActive={thread.isActive}
-          onBack={() => router.back()}
-        />
-      </View>
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: false,
+          gestureEnabled: true,
+        }}
+      />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1, backgroundColor: 'white' }}
+        keyboardVerticalOffset={0} 
+      >
+        {/* --- Header --- */}
+        <View style={{ paddingTop: insets.top }} className="bg-white border-b border-gray-100 z-10">
+          <ChatHeader
+            peerName={thread.peerName}
+            avatar={thread.avatar}
+            isActive={thread.isActive}
+            onBack={() => router.back()}
+          />
+        </View>
 
       {/* --- Message Body --- */}
       <KeyboardGestureArea interpolator="linear" style={{ flex: 1 }}>
@@ -158,5 +167,6 @@ export default function ChatThread() {
         />
       </Animated.View>
     </KeyboardAvoidingView>
+    </>
   )
 }

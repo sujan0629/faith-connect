@@ -2,19 +2,24 @@
 import LeaderSearchBar from '../../components/Leaders/LeaderSearchBar';
 import LeaderList from '../../components/Leaders/LeaderList';
 import { LeadersHeader } from '../../components/Headers/LeadersHeader';
+import { LeadersSkeleton } from '../../components/Skeletons/LeaderSkeleton';
 import { useLeaderStore } from '../../stores/leaderStore';
 import { useAuthStore } from '../../stores/authStore';
-import { useRouter } from 'expo-router';
+import { useDebouncedRouter } from '../../hooks/useDebounce';
 import Toast from 'react-native-toast-message';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, ScrollView, Text, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, ScrollView, Text, RefreshControl } from 'react-native';
 import { useState, useEffect } from 'react';
 import { FilterState } from '../../components/FilterDropdown';
 import { leadersApi } from '../../api/leaders';
 import type { Follower } from '@faithconnect/shared';
+import { Ionicons } from '@expo/vector-icons';
+import { useNetworkSync } from '../../hooks/useNetworkSync';
+import { useOfflineStore } from '../../stores/offlineStore';
+import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching';
 
 export default function LeadersScreen() {
-  const router = useRouter();
+  const router = useDebouncedRouter();
   const { leaders, loading, error, fetchLeaders, follow, unfollow } = useLeaderStore();
   const user = useAuthStore((s) => s.user);
   const isLeader = user?.role === 'leader';
@@ -30,6 +35,8 @@ export default function LeadersScreen() {
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [followersLoading, setFollowersLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { isOffline } = useNetworkSync();
+  const { isSyncing, syncError } = useOfflineStore();
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -37,11 +44,18 @@ export default function LeadersScreen() {
       if (isLeader && user?.id) {
         const data = await leadersApi.getFollowers(user.id);
         setFollowers(data);
+        await cacheFeedForOffline('leaders_followers', data);
       } else {
         await fetchLeaders({
           faith: filters.faith !== 'All Faiths' ? filters.faith : undefined,
           search: search || undefined,
         });
+        await cacheFeedForOffline('leaders_explore', leaders);
+      }
+    } catch (error) {
+      console.error('Failed to refresh leaders:', error);
+      if (isOffline) {
+        Toast.show({ type: 'info', text1: 'Offline', text2: 'Using cached data' });
       }
     } finally {
       setRefreshing(false)
@@ -55,10 +69,26 @@ export default function LeadersScreen() {
   // Fetch leaders on mount and when filters change
   useEffect(() => {
     if (!isLeader) {
-      fetchLeaders({
-        faith: filters.faith !== 'All Faiths' ? filters.faith : undefined,
-        search: search || undefined,
-      });
+      const loadLeaders = async () => {
+        try {
+          await fetchLeaders({
+            faith: filters.faith !== 'All Faiths' ? filters.faith : undefined,
+            search: search || undefined,
+          });
+          // Cache the leaders after successful fetch
+          await cacheFeedForOffline('leaders_explore', leaders);
+        } catch (error) {
+          console.error('Failed to fetch leaders:', error);
+          // Try to load from cache if network fails
+          if (isOffline) {
+            const cached = await getCachedFeedForOffline('leaders_explore');
+            if (cached) {
+              Toast.show({ type: 'info', text1: 'Offline', text2: 'Showing cached leaders' });
+            }
+          }
+        }
+      };
+      loadLeaders();
     }
   }, [filters.faith, search, isLeader]);
 
@@ -70,8 +100,18 @@ export default function LeadersScreen() {
         try {
           const data = await leadersApi.getFollowers(user.id);
           setFollowers(data);
+          // Cache followers after successful fetch
+          await cacheFeedForOffline('leaders_followers', data);
         } catch (error) {
           console.error('Failed to fetch followers:', error);
+          // Try to load from cache if network fails
+          if (isOffline) {
+            const cached = await getCachedFeedForOffline('leaders_followers');
+            if (cached) {
+              setFollowers(cached);
+              Toast.show({ type: 'info', text1: 'Offline', text2: 'Showing cached followers' });
+            }
+          }
         } finally {
           setFollowersLoading(false);
         }
@@ -104,6 +144,14 @@ export default function LeadersScreen() {
 
     return (
       <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        {isOffline && (
+          <View className="bg-gray-100 px-4 py-2 flex-row items-center gap-2">
+            <Ionicons name="warning" size={16} color="#3b82f6" />
+            <Text className="text-xs font-medium text-gray-800">
+              {isSyncing ? 'Syncing offline changes...' : syncError ? 'Sync failed' : 'Offline mode'}
+            </Text>
+          </View>
+        )}
         <LeadersHeader
           segment={leaderActiveTab as any}
           onSegmentChange={setActiveTab as any}
@@ -118,9 +166,7 @@ export default function LeadersScreen() {
             </View>
 
             {followersLoading ? (
-              <View className="flex-1 justify-center items-center py-8">
-                <ActivityIndicator size="small" color="#222" />
-              </View>
+              <LeadersSkeleton />
             ) : (
               <LeaderList
                 leaders={displayFollowers as any}
@@ -176,6 +222,14 @@ export default function LeadersScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      {isOffline && (
+        <View className="bg-gray-100 px-4 py-2 flex-row items-center gap-2">
+          <Ionicons name="warning" size={16} color="#3b82f6" />
+          <Text className="text-xs font-medium text-gray-800">
+            {isSyncing ? 'Syncing offline changes...' : syncError ? 'Sync failed' : 'Offline mode'}
+          </Text>
+        </View>
+      )}
       <LeadersHeader
         segment={worshiperActiveTab}
         onSegmentChange={setActiveTab as any}
@@ -190,9 +244,7 @@ export default function LeadersScreen() {
           </View>
 
           {loading ? (
-            <View className="flex-1 justify-center items-center py-8">
-              <ActivityIndicator size="small" color="#222" />
-            </View>
+            <LeadersSkeleton />
           ) : (
             <LeaderList
               leaders={filteredLeaders}

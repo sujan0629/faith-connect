@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react'
 import { View, Text, TextInput, ScrollView, Pressable, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter, useFocusEffect } from 'expo-router'
+import { useFocusEffect } from 'expo-router'
+import { useDebouncedRouter } from '../hooks/useDebounce'
 import { Ionicons } from '@expo/vector-icons'
 import Toast from 'react-native-toast-message'
 import { PostCard } from '../components/Feed/PostCard'
@@ -11,7 +12,7 @@ import { useFeedStore } from '../stores/feedStore'
 import { toastConfig } from '../components/ToastConfig'
 
 export default function SearchScreen() {
-  const router = useRouter()
+  const router = useDebouncedRouter()
   const inputRef = useRef<TextInput>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchType, setSearchType] = useState<'all' | 'post' | 'reel'>('all')

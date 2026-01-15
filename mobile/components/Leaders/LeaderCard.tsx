@@ -1,4 +1,5 @@
 import { View, Text, Pressable, Image } from 'react-native'
+import { DebouncedPressable } from '../DebouncedPressable'
 import { SolidButton } from '../Buttons/SolidButtonTwo'
 import { useFollowStore } from '../../stores/followStore'
 import type { Leader } from '@faithconnect/shared'
@@ -19,7 +20,7 @@ export const LeaderCard = ({ item, onToggleFollow, onOpenProfile, hideFollowButt
   }
 
   return (
-  <Pressable
+  <DebouncedPressable
     onPress={() => onOpenProfile?.(item.id)}
     className="bg-white p-4"
   >
@@ -48,6 +49,6 @@ export const LeaderCard = ({ item, onToggleFollow, onOpenProfile, hideFollowButt
         )}
       </View>
     </View>
-  </Pressable>
+  </DebouncedPressable>
   )
 }

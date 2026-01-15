@@ -1,4 +1,5 @@
-import { useRouter, useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
+import { useDebouncedRouter } from '../hooks/useDebounce'
 import { View, Text, Image, Pressable, ActivityIndicator } from 'react-native'
 import { useAuthStore } from '../stores/authStore'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -8,7 +9,7 @@ import * as ImagePicker from 'expo-image-picker'
 import * as Notifications from 'expo-notifications'
 
 export default function Landing() {
-    const router = useRouter()
+    const router = useDebouncedRouter()
     const params = useLocalSearchParams()
     const setRolePreference = useAuthStore((s) => s.setRolePreference)
     const { isAuthenticated, user, isHydrated, hydrate } = useAuthStore()
@@ -59,7 +60,7 @@ export default function Landing() {
     if (!isHydrated) {
         return (
             <View className="flex-1 bg-white items-center justify-center">
-                <ActivityIndicator size="large" color="#3b82f6" />
+                <ActivityIndicator size="small" color="#111" />
             </View>
         )
     }

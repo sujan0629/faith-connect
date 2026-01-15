@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, ScrollView, Switch, Pressable, ActivityIndicator } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useDebouncedRouter } from '../hooks/useDebounce'
 import { Ionicons } from '@expo/vector-icons'
 import Toast from 'react-native-toast-message'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -11,7 +11,7 @@ import { SolidButton } from '../components/Buttons/SolidButton'
 import { useSettingsStore } from '../stores/settingsStore'
 
 export default function SettingsScreen() {
-  const router = useRouter()
+  const router = useDebouncedRouter()
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore()
   const [isSaving, setIsSaving] = useState(false)
   const [localSettings, setLocalSettings] = useState<UserSettings | null>(null)

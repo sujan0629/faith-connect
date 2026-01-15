@@ -36,7 +36,7 @@ export const NotificationsHeader = ({ segment, onSegmentChange, filters, onFilte
         </Pressable>
       </View>
 
-      <View className="mb-4 mt-4 flex-row gap-0 bg-gray-100 mx-4 rounded-full p-1">
+      <View className="mb-1 mt-4 flex-row gap-0 bg-gray-100 mx-4 rounded-full p-1">
         {segments.map((item) => (
           <Pressable
             key={item}

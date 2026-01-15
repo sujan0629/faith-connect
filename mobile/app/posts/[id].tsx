@@ -195,6 +195,7 @@ export default function PostDetailScreen() {
       <Stack.Screen
         options={{
           headerShown: false,
+          gestureEnabled: true,
         }}
       />
       <PostScreenHeader 

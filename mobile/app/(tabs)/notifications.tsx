@@ -1,35 +1,72 @@
-import { ScrollView, View, RefreshControl } from 'react-native'
+import { ScrollView, View, RefreshControl, Text } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useState, useMemo, useEffect } from 'react'
-import { useRouter } from 'expo-router'
+import { useDebouncedRouter } from '../../hooks/useDebounce'
 import { NotificationsHeader } from '../../components/Headers/NotificationsHeader'
+import { NotificationSearchBar } from '../../components/Notifications/NotificationSearchBar'
+import { NotificationsSkeleton } from '../../components/Skeletons/NotificationSkeleton'
 import { useNotificationStore, Notification } from '../../stores/notificationStore'
 import { NotificationMentionCard } from '../../components/Notifications/NotificationMentionCard'
 import { NotificationLikeCard } from '../../components/Notifications/NotificationLikeCard'
 import { NotificationEmptyState } from '../../components/Notifications/NotificationEmptyState'
 import { FilterState } from '../../components/FilterDropdown'
+import { useNetworkSync } from '../../hooks/useNetworkSync'
+import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
+import Toast from 'react-native-toast-message'
+import { Ionicons } from '@expo/vector-icons'
+import { useOfflineStore } from '../../stores/offlineStore'
 
 type TabType = 'All' | 'Mentions'
 
 export default function NotificationsScreen() {
-  const router = useRouter()
+  const router = useDebouncedRouter()
   const { items, fetchNotifications, markRead, deleteNotification } = useNotificationStore()
   const [activeTab, setActiveTab] = useState<TabType>('All')
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const { isSyncing, syncError } = useOfflineStore()
+  
   const [filters, setFilters] = useState<FilterState>({
     sortBy: 'Recent',
     type: 'All',
   })
   const [refreshing, setRefreshing] = useState(false)
+  const { isOffline } = useNetworkSync()
 
   // Fetch notifications on mount
   useEffect(() => {
-    fetchNotifications()
+    const loadNotifications = async () => {
+      try {
+        await fetchNotifications()
+        // Cache notifications after successful fetch
+        await cacheFeedForOffline('notifications', items)
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error)
+        // Try to load from cache if network fails
+        if (isOffline) {
+          const cached = await getCachedFeedForOffline('notifications')
+          if (cached) {
+            Toast.show({ type: 'info', text1: 'Offline', text2: 'Showing cached notifications' })
+          }
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadNotifications()
   }, [])
 
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
       await fetchNotifications()
+      // Cache notifications after successful fetch
+      await cacheFeedForOffline('notifications', items)
+    } catch (error) {
+      console.error('Failed to refresh notifications:', error)
+      if (isOffline) {
+        Toast.show({ type: 'info', text1: 'Offline', text2: 'Using cached notifications' })
+      }
     } finally {
       setRefreshing(false)
     }
@@ -67,11 +104,21 @@ export default function NotificationsScreen() {
       if (filters.type === 'Reposts') filtered = filtered.filter((n) => n.type === 'repost')
     }
 
+    // Apply search filter
+    if (search.trim()) {
+      const searchLower = search.toLowerCase()
+      filtered = filtered.filter((n) =>
+        n.actorName?.toLowerCase().includes(searchLower) ||
+        n.content?.toLowerCase().includes(searchLower) ||
+        n.replyingTo?.toLowerCase().includes(searchLower)
+      )
+    }
+
     // Apply sorting - Always sort by date (most recent first)
     filtered = filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
     return filtered
-  }, [items, activeTab, filters])
+  }, [items, activeTab, filters, search])
 
   const handleReply = async (id: string) => {
     // TODO: Implement reply logic
@@ -117,9 +164,24 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      {isOffline && (
+        <View className="bg-gray-100 px-4 py-2 flex-row items-center gap-2">
+          <Ionicons name="warning" size={16} color="#3b82f6" />
+          <Text className="text-xs font-medium text-gray-800">
+            {isSyncing ? 'Syncing offline changes...' : syncError ? 'Sync failed' : 'Offline mode'}
+          </Text>
+        </View>
+      )}
       <NotificationsHeader segment={activeTab} onSegmentChange={setActiveTab} filters={filters} onFiltersChange={setFilters} />
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
-        {filteredNotifications.length === 0 ? (
+        {/* Search Bar */}
+        <View className="px-4">
+          <NotificationSearchBar value={search} onChange={setSearch} />
+        </View>
+
+        {loading ? (
+          <NotificationsSkeleton />
+        ) : filteredNotifications.length === 0 ? (
           <View className="px-4">
             <NotificationEmptyState tab={activeTab.toLowerCase() as 'all' | 'mentions'} />
           </View>

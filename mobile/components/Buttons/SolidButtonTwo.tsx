@@ -1,4 +1,5 @@
 import { Pressable, Text, ViewStyle, ActivityIndicator } from 'react-native'
+import { useRef } from 'react'
 
 interface Props {
   label: string
@@ -10,6 +11,15 @@ interface Props {
 }
 
 export const SolidButton = ({ label, onPress, variant = 'primary', style, loading = false, disabled = false }: Props) => {
+  const lastPressRef = useRef<number>(0)
+  
+  const handlePress = () => {
+    const now = Date.now()
+    if (now - lastPressRef.current < 300) return // Debounce: ignore if pressed within 300ms
+    lastPressRef.current = now
+    onPress()
+  }
+
   const base = 'rounded-full px-6'
   const styles =
     variant === 'primary'
@@ -22,7 +32,7 @@ export const SolidButton = ({ label, onPress, variant = 'primary', style, loadin
   const buttonStyle = { paddingVertical: 4, ...style }
 
   return (
-    <Pressable onPress={disabled ? undefined : onPress} disabled={disabled} className={`${base} ${styles}`} style={buttonStyle}>
+    <Pressable onPress={disabled ? undefined : handlePress} disabled={disabled} className={`${base} ${styles}`} style={buttonStyle}>
       {loading ? (
         <ActivityIndicator size="small" color={variant === 'primary' ? '#ffffff' : '#222'} />
       ) : (

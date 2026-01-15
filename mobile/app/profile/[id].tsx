@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { View, ScrollView, Text, RefreshControl, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
+import { Stack } from 'expo-router'
+import { useDebouncedRouter } from '../../hooks/useDebounce'
 import { Ionicons } from '@expo/vector-icons'
 import { ProfileTopBar } from '../../components/Profile/ProfileTopBar'
 import { ProfileHeader } from '../../components/Profile/ProfileHeader'
@@ -27,7 +29,7 @@ import type { Post } from '../../stores/feedStore'
 
 export default function ProfileScreen() {
   const { id } = useLocalSearchParams()
-  const router = useRouter()
+  const router = useDebouncedRouter()
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const updateUser = useAuthStore((s) => s.updateUser)
@@ -312,9 +314,16 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
-      {/* Top Bar */}
-      <ProfileTopBar 
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: false,
+          gestureEnabled: true,
+        }}
+      />
+      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+        {/* Top Bar */}
+        <ProfileTopBar 
         username={displayUsername} 
         isOwnProfile={isOwnProfile}
         onMenuPress={() => {
@@ -483,5 +492,6 @@ export default function ProfileScreen() {
         </>
       )}
     </SafeAreaView>
+    </>
   )
 }

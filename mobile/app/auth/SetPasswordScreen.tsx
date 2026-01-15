@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+import { useDebouncedRouter } from "../../hooks/useDebounce";
 import { SolidButton } from "../../components/Buttons/SolidButton";
 import { TextField } from "../../components/InputFields/TextField";
 import Toast from 'react-native-toast-message';
@@ -20,7 +21,7 @@ import { api } from "../../api/axios";
 import { useAuthStore } from "../../stores/authStore";
 
 export default function SetPasswordScreen() {
-  const router = useRouter();
+  const router = useDebouncedRouter();
   const params = useLocalSearchParams();
   const { email = "", signupToken = "" } = params;
   const rolePreference = useAuthStore((s) => s.rolePreference);
