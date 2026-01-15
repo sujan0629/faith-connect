@@ -1,7 +1,8 @@
-import { View, Text, Pressable, Image, Animated } from 'react-native'
+import { View, Text, Pressable, Image, Animated, Platform, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'expo-router'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useAuthStore } from '../../stores/authStore'
 import { useOfflineStore } from '../../stores/offlineStore'
 import { api } from '../../api/axios'
@@ -34,6 +35,7 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
     }).start()
   }, [shouldShow])
 
+  // Stabilized User Refresh - Prevents navigation context crashes
   useEffect(() => {
     let active = true
     const refreshUser = async () => {
@@ -42,14 +44,12 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
         const res = await api.get('/users/me')
         if (active && res.data) updateUser(res.data)
       } catch (error: any) {
-        console.warn('Failed to refresh user', error?.response?.data || error?.message)
+        // Silent catch to prevent UI interruption
       }
     }
     refreshUser()
-    return () => {
-      active = false
-    }
-  }, [user?.id, updateUser])
+    return () => { active = false }
+  }, [user?.id]) // Reduced dependencies to prevent re-run loops
 
   const handleSegmentChange = (newSegment: Segment) => {
     setIsExpanded(false)
@@ -58,14 +58,17 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
 
   return (
     <View className="bg-white">
+      {/* Offline Status Bar */}
       {isOffline && (
         <View className="bg-gray-100 px-4 py-2 flex-row items-center gap-2">
           <Ionicons name="warning" size={16} color="#3b82f6" />
           <Text className="text-xs font-medium text-gray-800">
-            {isSyncing ? 'Syncing offline changes...' : syncError ? 'Sync failed' : 'Offline mode'}
+            {isSyncing ? 'Syncing...' : syncError ? 'Sync failed' : 'Offline'}
           </Text>
         </View>
       )}
+
+      {/* Main Top Bar */}
       <View className="flex-row items-center justify-between px-4 py-3">
         <Pressable 
           onPress={() => router.push('/search')}
@@ -73,6 +76,7 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
         >
           <Ionicons name="filter" size={24} color="#111111" />
         </Pressable>
+
         <Pressable 
           className="flex-row items-center gap-1"
           onPress={() => setIsExpanded(!isExpanded)}
@@ -86,31 +90,46 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
             color="#111111" 
           />
         </Pressable>
+
         <Pressable 
-            className="h-9 w-9 items-center justify-center"
-            onPress={() => user?.id && router.push(`/profile/${user.id}` as any)}
-          >
-            <Image 
-              source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cmFuZG9tJTIwcGVvcGxlfGVufDB8fDB8fHww' }} 
-              className="h-9 w-9 rounded-full bg-gray-200" 
-            />
-          </Pressable>
+          className="h-9 w-9 items-center justify-center"
+          onPress={() => user?.id && router.push(`/profile/${user.id}` as any)}
+        >
+          <Image 
+            source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fm=jpg&q=60&w=3000' }} 
+            className="h-9 w-9 rounded-full bg-gray-200" 
+          />
+        </Pressable>
       </View>
       
+      {/* Animated Segment Switcher */}
       {shouldShow && (
         <Animated.View style={{ opacity: toggleOpacity }}>
-          <View className="mb-4 mt-4 flex-row gap-0 bg-gray-100 mx-4 rounded-full p-1">
-            {segments.map((item) => (
-              <Pressable
-                key={item}
-                onPress={() => handleSegmentChange(item)}
-                className={`flex-1 rounded-full px-6 py-2.5 ${segment === item ? 'bg-[#111]' : 'bg-transparent'}`}
-              >
-                <Text className={`text-center text-sm font-semibold ${segment === item ? 'text-white' : 'text-gray-600'}`}>
-                  {item}
-                </Text>
-              </Pressable>
-            ))}
+          <View className="mb-4 mt-4 flex-row bg-gray-100 mx-4 rounded-full p-1">
+            {segments.map((item) => {
+              const isActive = segment === item
+              return (
+                <Pressable
+                  key={item}
+                  onPress={() => handleSegmentChange(item)}
+                  className="flex-1 rounded-full py-2.5 overflow-hidden relative justify-center items-center"
+                >
+                  {isActive && (
+                    <LinearGradient
+                      // Apple-style Glass Gradient (Lighter dark to deep black)
+                      colors={['#222222', '#111111']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 999 }]}
+                    />
+                  )}
+                  
+                  <Text className={`text-center text-sm font-bold z-10 ${isActive ? 'text-white' : 'text-gray-500'}`}>
+                    {item}
+                  </Text>
+                </Pressable>
+              )
+            })}
           </View>
         </Animated.View>
       )}

@@ -5,6 +5,7 @@ import { Message, MessageDocument } from './schemas/message.schema';
 import { Thread, ThreadDocument } from './schemas/thread.schema';
 import { UsersService } from '../users/users.service';
 import { PushNotificationService } from '../notifications/push-notification.service';
+import { MessagesGateway } from './messages.gateway';
 import type { UserDocument } from '../users/schemas/user.schema';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class MessagesService {
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
     private usersService: UsersService,
     private pushNotificationService: PushNotificationService,
+    private messagesGateway: MessagesGateway,
   ) {}
 
   private buildPairKey(userA: string, userB: string) {
@@ -145,6 +147,20 @@ export class MessagesService {
           sender.name || sender.username || 'Someone',
           content,
         );
+        // Emit realtime message to recipient if connected
+        try {
+          this.messagesGateway.emitMessageToUser(recipientId, {
+            id: message.id,
+            threadId: thread.id,
+            senderId: sender.id,
+            senderName: sender.name,
+            content: message.content,
+            createdAt: message.createdAt,
+            isMine: false,
+          });
+        } catch (emitErr) {
+          console.error('Realtime emit failed:', emitErr);
+        }
       } catch (error) {
         console.error('Failed to send message push notification:', error);
         // Don't fail the message send if push notification fails

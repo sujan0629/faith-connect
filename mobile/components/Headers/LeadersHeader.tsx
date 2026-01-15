@@ -1,5 +1,6 @@
-import { View, Text, Pressable, Image } from 'react-native'
+import { View, Text, Pressable, Image, StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useAuthStore } from '../../stores/authStore'
 import LeaderSortDropdown from '../Leaders/LeaderSortDropdown'
 import { FilterState } from '../FilterDropdown'
@@ -45,9 +46,17 @@ export const LeadersHeader = ({ segment, onSegmentChange, filters, onFiltersChan
           <Pressable
             key={item}
             onPress={() => onSegmentChange(item)}
-            className={`flex-1 rounded-full px-6 py-2.5 ${segment === item ? 'bg-[#111]' : 'bg-transparent'}`}
+            className={`flex-1 rounded-full px-6 py-2.5 relative overflow-hidden`}
           >
-            <Text className={`text-center text-sm font-semibold ${segment === item ? 'text-white' : 'text-gray-600'}`}>
+            {segment === item && (
+              <LinearGradient
+                colors={["#222222", "#111111"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={[StyleSheet.absoluteFill, { borderRadius: 999 }]}
+              />
+            )}
+            <Text className={`text-center text-sm font-semibold z-10 ${segment === item ? 'text-white' : 'text-gray-600'}`}>
               {item}
             </Text>
           </Pressable>

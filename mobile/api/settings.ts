@@ -8,6 +8,7 @@ export interface UserSettings {
   allowComments: boolean
   whoCanLike: 'everyone' | 'followers' | 'none'
   blockedContentTopics: string[]
+  navigationStyle?: 'simple' | 'dark' | 'glass'
 }
 
 export const settingsApi = {

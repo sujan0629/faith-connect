@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { settingsApi, UserSettings } from '../api/settings'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 type SettingsStore = {
   settings: UserSettings | null
@@ -18,7 +19,10 @@ const defaultSettings: UserSettings = {
   allowComments: true,
   whoCanLike: 'everyone',
   blockedContentTopics: [],
+  navigationStyle: 'simple',
 }
+
+const NAV_KEY = 'fc_navigationStyle'
 
 export const useSettingsStore = create<SettingsStore>((set, get) => ({
   settings: defaultSettings,
@@ -29,6 +33,15 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const settings = await settingsApi.getSettings()
+      // merge locally persisted navigationStyle if present (backend may not persist this field)
+      try {
+        const local = await AsyncStorage.getItem(NAV_KEY)
+        if (local) {
+          ;(settings as any).navigationStyle = local as any
+        }
+      } catch (e) {
+        // ignore
+      }
       set({ settings, isLoading: false })
     } catch (error: any) {
       set({ error: error.message, isLoading: false })
@@ -40,6 +53,18 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const settings = await settingsApi.updateSettings(updates)
+      // if navigationStyle provided, persist locally as backend may ignore it
+      try {
+        if (updates.navigationStyle) {
+          await AsyncStorage.setItem(NAV_KEY, updates.navigationStyle)
+          ;(settings as any).navigationStyle = updates.navigationStyle
+        } else {
+          const local = await AsyncStorage.getItem(NAV_KEY)
+          if (local) (settings as any).navigationStyle = local as any
+        }
+      } catch (e) {
+        // ignore
+      }
       set({ settings, isLoading: false })
     } catch (error: any) {
       set({ error: error.message, isLoading: false })
@@ -52,5 +77,13 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     set((state) => ({
       settings: state.settings ? { ...state.settings, [key]: value } : state.settings,
     }))
+    // persist navigationStyle locally
+    if (key === 'navigationStyle') {
+      try {
+        AsyncStorage.setItem(NAV_KEY, String(value))
+      } catch (e) {
+        // ignore
+      }
+    }
   },
 }))

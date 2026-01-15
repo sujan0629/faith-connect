@@ -62,6 +62,9 @@ export default function ProfileScreen() {
   const { toggleLike, toggleSave } = useFeedStore()
   const [refreshing, setRefreshing] = useState(false)
 
+  const { createThread } = useChatStore.getState()
+  const { threads } = useChatStore()
+
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
@@ -208,7 +211,7 @@ export default function ProfileScreen() {
 
   const displayProfile = profile || (isOwnProfile ? user : null)
   const displayName = displayProfile?.name || 'User not found'
-  const displayUsername = displayProfile?.username || displayProfile?.email?.split('@')[0] || 'notfound'
+  const displayUsername = displayProfile?.username || displayProfile?.email?.split('@')[0] || 'user'
   const displayAvatar = displayProfile?.avatar
   const displayFaith = displayProfile?.faith || 'Unknown'
   const displayRole = displayProfile?.role || 'Unknown'
@@ -235,6 +238,17 @@ export default function ProfileScreen() {
         if (loading) {
           return (
             <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+              <ProfileTopBar 
+                username={displayUsername}
+                isOwnProfile={isOwnProfile}
+                onMenuPress={() => {
+                  if (isOwnProfile) {
+                    setShowMenu(true)
+                  } else {
+                    setShowAccountActionModal(true)
+                  }
+                }}
+              />
               <ProfileSkeleton />
             </SafeAreaView>
           )
@@ -270,8 +284,6 @@ export default function ProfileScreen() {
       })
     }
   }
-
-  const { createThread } = useChatStore.getState()
   const handleMessagePress = async () => {
     Toast.show({
       type: 'info',
@@ -279,12 +291,29 @@ export default function ProfileScreen() {
       text2: 'Opening conversation...',
     })
     if (!profileId) return;
-    try {
-      const threadId = await createThread(profileId);
-      router.push(`/messages/${threadId}`);
-    } catch (err: any) {
-      Toast.show({ type: 'error', text1: 'Failed to start chat', text2: err?.response?.data?.message || 'Please try again' });
+    const existingThread = threads.find((t) => t.peerId === profileId)
+    if (existingThread) {
+      router.push(`/messages/${existingThread.id}`)
+      return
     }
+
+    // Navigate immediately to a pending thread id so the ChatSkeleton shows instantly.
+    const pendingId = `pending-${profileId}-${Date.now()}`
+    router.push(`/messages/${pendingId}`)
+
+    // Insert an optimistic pending thread so header/avatar show immediately
+    useChatStore.getState().addPendingThread({
+      id: pendingId,
+      peerId: profileId!,
+      peerName: displayName,
+      lastMessage: '',
+      unread: 0,
+      avatar: displayAvatar,
+      isActive: false,
+      timestamp: new Date(),
+    })
+
+    // Do NOT create thread yet — we'll create it when the user sends the first message.
   }
 
   const handleEditPress = () => {

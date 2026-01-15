@@ -98,7 +98,7 @@ export const ReelActions = ({
   }
   return (
     <>
-      <View className="absolute right-4 bottom-0 gap-6 items-center">
+      <View className="absolute right-4 bottom-20 gap-6 items-center">
         {/* Like Button */}
         <Pressable onPress={() => {
           const wasLiked = isLiked(reel.id)

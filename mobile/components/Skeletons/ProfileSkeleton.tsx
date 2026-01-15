@@ -43,23 +43,6 @@ const SkeletonPlaceholder = ({ width = 'w-24', height = 'h-4' }: { width?: strin
 export const ProfileSkeleton = () => {
   return (
     <View className="flex-1 bg-white">
-      {/* Top bar (matches ProfileTopBar) */}
-      <View className="bg-white border-b border-gray-100">
-        <View className="flex-row items-center justify-between px-4 py-3">
-          <View className="h-9 w-9 items-center justify-center">
-            <SkeletonPlaceholder width="w-6" height="h-6" />
-          </View>
-          <View className="absolute left-0 right-0 items-center">
-            <SkeletonPlaceholder width="w-40" height="h-6" />
-          </View>
-          <View className="flex-row gap-2">
-            <View className="h-9 w-9 items-center justify-center">
-              <SkeletonPlaceholder width="w-6" height="h-6" />
-            </View>
-          </View>
-        </View>
-      </View>
-
       {/* Header (matches ProfileHeader) */}
       <View className="bg-white px-4 py-6">
         <View className="items-center">

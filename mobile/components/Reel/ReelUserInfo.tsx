@@ -61,7 +61,7 @@ export const ReelUserInfo = ({ reel, onFollowPress }: ReelUserInfoProps) => {
   }
 
   return (
-    <View className="absolute bottom-0 left-0 right-0 z-10">
+    <View className="absolute bottom-20 left-0 right-0 z-10">
       <View className="px-4 pb-4">
         <View className="flex-row items-center gap-3 mb-3">
           <Pressable onPress={() => router.push(`/profile/${reel.authorId}`)}>

@@ -45,6 +45,7 @@ export default function SettingsScreen() {
     }
   }
 
+
   const handleSave = async () => {
     if (!localSettings) return
 
@@ -306,6 +307,8 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
+
+        {/* Navigation style moved to Profile menu */}
 
         {/* Save Button */}
         <View className="px-6 py-6">

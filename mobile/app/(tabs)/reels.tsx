@@ -19,7 +19,7 @@ import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
 import Toast from 'react-native-toast-message'
 import Ionicons from '@expo/vector-icons/Ionicons'
 
-const TAB_BAR_HEIGHT = 85
+const TAB_BAR_HEIGHT = 0;
 
 export default function ReelsScreen() {
   const { reels: storeReels, toggleLike, toggleSave } = useFeedStore()
