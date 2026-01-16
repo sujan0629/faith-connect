@@ -76,42 +76,59 @@ export default function ChatThread() {
       if (!effectiveThreadId) return
 
       // If this is a pending id, create the real thread first (using peerId embedded in the pending id), set mapping, then send
-      if (String(effectiveThreadId).startsWith('pending-')) {
-        const raw = String(effectiveThreadId).replace(/^pending-/, '')
+      if (String(threadId).startsWith('pending-')) {
+        const raw = String(threadId).replace(/^pending-/, '')
         const lastDash = raw.lastIndexOf('-')
         const peerId = lastDash !== -1 ? raw.slice(0, lastDash) : raw
+        try {
+          // Ensure we have the latest threads list to avoid creating duplicates
           try {
-            // Ensure we have the latest threads list to avoid creating duplicates
-            try {
-              await useChatStore.getState().fetchThreads()
-            } catch {
-              // ignore fetch errors here; we'll try createThread below
-            }
-
-            // Re-check for existing thread with same peerId
-            const existing = useChatStore.getState().threads.find((t) => t.peerId === peerId)
-            if (existing) {
-              useChatStore.getState().setPendingMapping(effectiveThreadId, existing.id)
-              await sendMessage(existing.id, msg)
-              return
-            }
-
-            // No existing thread found — create a new one
-            const realId = await useChatStore.getState().createThread(peerId)
-            useChatStore.getState().setPendingMapping(effectiveThreadId, realId)
-            await sendMessage(realId, msg)
+            await useChatStore.getState().fetchThreads()
           } catch {
-            Toast.show({ type: 'error', text1: 'Failed to send', text2: 'Could not create conversation' })
+            // ignore fetch errors here; we'll try createThread below
           }
+
+          // Re-check for existing thread with same peerId
+          const existing = useChatStore.getState().threads.find((t) => t.peerId === peerId)
+          if (existing && !existing.id.startsWith('pending-')) {
+            useChatStore.getState().setPendingMapping(threadId, existing.id)
+            await sendMessage(existing.id, msg)
+            setContent('')
+            setTimeout(() => {
+              flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+            }, 100)
+            return
+          }
+
+          // No existing thread found — create a new one
+          const realId = await useChatStore.getState().createThread(peerId)
+          useChatStore.getState().setPendingMapping(threadId, realId)
+          await sendMessage(realId, msg)
+          setContent('')
+          setTimeout(() => {
+            flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+          }, 100)
+        } catch (err) {
+          console.error('Thread creation error:', err)
+          Toast.show({ type: 'error', text1: 'Failed to send', text2: 'Could not create conversation' })
+        }
+        return
+      }
+
+      // For non-pending threads, check if thread actually exists before sending
+      if (!thread) {
+        Toast.show({ type: 'error', text1: 'Thread not found', text2: 'Please try again' })
         return
       }
 
       await sendMessage(effectiveThreadId, msg)
+      setContent('')
       // ChatInput already clears the input instantly via onChangeText('')
       setTimeout(() => {
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
       }, 100)
-    } catch {
+    } catch (err) {
+      console.error('Send message error:', err)
       Toast.show({ type: 'error', text1: 'Failed to send', text2: 'Please try again' })
     }
   }
@@ -136,7 +153,9 @@ export default function ChatThread() {
   }, [effectiveThreadId, fetchMessages, messagesLoadedForThread])
 
   // Show skeleton only on the initial load (when store hasn't marked the thread/messages as loaded)
-  if (!threadsLoaded || (effectiveThreadId && !messagesLoadedForThread)) {
+  // For pending threads, skip the messages check since they don't have messages yet
+  const isPendingThread = String(threadId).startsWith('pending-')
+  if (!threadsLoaded || (effectiveThreadId && !messagesLoadedForThread && !isPendingThread)) {
     // Render a real header + input, but skeleton messages in the middle
     return (
       <>
