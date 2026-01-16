@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useEffect } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
+import { HomeHeader } from '../Headers/HomeHeader'
 
 const SkeletonPlaceholder = ({ width = 'w-24', height = 'h-4' }: { width?: string; height?: string }) => {
   const shimmer = useSharedValue(0)
@@ -45,31 +46,21 @@ const SkeletonPlaceholder = ({ width = 'w-24', height = 'h-4' }: { width?: strin
   )
 }
 
-export const HomeSkeleton = () => {
+export const HomeSkeleton = ({ 
+  segment = 'Explore', 
+  onSegmentChange, 
+  isAtTop = true,
+  isOffline = false
+}: { 
+  segment?: 'Explore' | 'Following'
+  onSegmentChange?: (segment: 'Explore' | 'Following') => void
+  isAtTop?: boolean
+  isOffline?: boolean
+}) => {
   return (
     <View className="flex-1 bg-white">
-      {/* Header Skeleton */}
-      <View className="bg-white">
-        <View className="flex-row items-center justify-between px-4 py-3">
-          {/* Filter icon */}
-          <SkeletonPlaceholder width="w-6" height="h-6" />
-          
-          {/* Title and chevron */}
-          <View className="flex-row items-center gap-1">
-            <SkeletonPlaceholder width="w-24" height="h-6" />
-            <SkeletonPlaceholder width="w-4" height="h-4" />
-          </View>
-          
-          {/* Avatar */}
-          <View className="h-9 w-9 rounded-full bg-gray-200" />
-        </View>
-
-        {/* Segment toggle */}
-        <View className="mb-4 mt-4 mx-4 rounded-full bg-gray-100 p-3 flex-row gap-0">
-          <View className="flex-1 rounded-full px-6 py-4 bg-gray-200" />
-          <View className="flex-1 rounded-full px-6 py-4 bg-gray-100" />
-        </View>
-      </View>
+      {/* REAL Header */}
+      <HomeHeader segment={segment} onSegmentChange={onSegmentChange || (() => {})} isAtTop={isAtTop} isOffline={isOffline} />
 
       {/* Posts Skeleton */}
       <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>

@@ -499,7 +499,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       {isLoading && data.length === 0 ? (
-        <HomeSkeleton />
+        <HomeSkeleton segment={segment} onSegmentChange={setSegment} isAtTop={isAtTop} isOffline={isOffline} />
       ) : (
         <View className="relative flex-1" style={{ overflow: 'hidden' }}>
           <Animated.View 
