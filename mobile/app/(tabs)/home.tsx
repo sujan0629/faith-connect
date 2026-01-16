@@ -2,7 +2,7 @@ import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { View, Text, ScrollView, Pressable, NativeScrollEvent, NativeSyntheticEvent, Animated, Dimensions, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
-import { useRouter, useLocalSearchParams , useFocusEffect } from 'expo-router'
+import { useLocalSearchParams , useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { PostCard } from '../../components/Feed/PostCard'
 import ReelCard from '../../components/Reel/ReelCard'
@@ -21,6 +21,7 @@ import { useFollowStore } from '../../stores/followStore'
 import { useFeedAlgorithm } from '../../hooks/useFeedAlgorithm'
 import { useNetworkSync } from '../../hooks/useNetworkSync'
 import { useDebouncedRouter } from '../../hooks/useDebounce'
+import { useHideTabOnScroll } from '../../hooks/useHideTabOnScroll'
 import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
 
 type Segment = 'Explore' | 'Following'
@@ -115,6 +116,7 @@ export default function HomeScreen() {
 
   // Refetch following feed when follow state changes
   const followingIds = useFollowStore((state) => state.followingIds)
+   
   useEffect(() => {
     const refetchFollowing = async () => {
       try {
@@ -133,6 +135,7 @@ export default function HomeScreen() {
   }, [followingIds, setFollowing])
 
   // Load feed data on mount
+   
   useEffect(() => {
     const loadFeed = async () => {
       try {
@@ -285,6 +288,7 @@ export default function HomeScreen() {
     }
   }, [params.from])
 
+   
   const loadMore = useCallback(async () => {
     if (isLoadingMore) return
     
@@ -418,6 +422,8 @@ export default function HomeScreen() {
     }
   }, [reelPositions, postPositions, data, trackView, isLoadingMore, debouncedLoadMore])
 
+  const onHideScroll = useHideTabOnScroll()
+
   const handleReelLayout = useCallback((reelId: string, event: any) => {
     const { y, height } = event.nativeEvent.layout
     setReelPositions(prev => {
@@ -508,7 +514,7 @@ export default function HomeScreen() {
           <ScrollView 
             className="flex-1" 
             contentContainerStyle={{ paddingBottom: 32, paddingTop: isOffline ? 160 : 120 }}
-            onScroll={handleScroll}
+            onScroll={(e) => { onHideScroll(e); handleScroll(e); }}
             scrollEventThrottle={16}
             removeClippedSubviews={true}
             refreshControl={

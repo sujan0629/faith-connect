@@ -38,6 +38,7 @@ export default function RootLayout() {
 
   const { user } = useAuthStore();
 
+   
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { View, ScrollView, Text, RefreshControl, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useLocalSearchParams } from 'expo-router'
-import { Stack } from 'expo-router'
+import { useLocalSearchParams , Stack } from 'expo-router'
+
 import { useDebouncedRouter } from '../../hooks/useDebounce'
 import { Ionicons } from '@expo/vector-icons'
 import { ProfileTopBar } from '../../components/Profile/ProfileTopBar'
@@ -62,7 +62,7 @@ export default function ProfileScreen() {
   const { toggleLike, toggleSave } = useFeedStore()
   const [refreshing, setRefreshing] = useState(false)
 
-  const { createThread } = useChatStore.getState()
+  
   const { threads } = useChatStore()
 
   const handleRefresh = async () => {
@@ -205,6 +205,7 @@ export default function ProfileScreen() {
     return () => {
       active = false
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId, isOwnProfile, user?.id, updateUser])
 
   
@@ -314,6 +315,25 @@ export default function ProfileScreen() {
     })
 
     // Do NOT create thread yet — we'll create it when the user sends the first message.
+    // In background: check backend for an existing thread with this peer. If found,
+    // remove the optimistic pending thread immediately to avoid duplicates and
+    // navigate to the real thread id (replace so the user doesn't see a back navigation).
+    ;(async () => {
+      try {
+        const { messagesApi } = await import('../../api/messages')
+        const remoteThreads = await messagesApi.listThreads()
+        const found = remoteThreads.find((t) => t.peerId === profileId)
+        if (found) {
+          // remove pending and map it to real id in the store to avoid duplicates.
+          // Do NOT navigate — keep the optimistic pending route but map it so
+          // the chat screen shows the real thread in-place.
+          useChatStore.getState().setPendingMapping(pendingId, found.id)
+        }
+      } catch (err) {
+        // ignore network errors — we'll create thread when sending message
+        console.warn('[Profile] failed to verify remote thread', err)
+      }
+    })()
   }
 
   const handleEditPress = () => {

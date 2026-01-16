@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image, Animated, Platform, StyleSheet } from 'react-native'
+import { View, Text, Pressable, Image, Animated, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'expo-router'
@@ -27,6 +27,7 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
 
   const shouldShow = isExpanded || isAtTop
 
+   
   useEffect(() => {
     Animated.timing(toggleOpacity, {
       toValue: shouldShow ? 1 : 0,
@@ -36,16 +37,17 @@ export const HomeHeader = ({ segment, onSegmentChange, isAtTop, isOffline }: Hom
   }, [shouldShow])
 
   // Stabilized User Refresh - Prevents navigation context crashes
+   
   useEffect(() => {
     let active = true
     const refreshUser = async () => {
       if (!user?.id) return
       try {
-        const res = await api.get('/users/me')
-        if (active && res.data) updateUser(res.data)
-      } catch (error: any) {
-        // Silent catch to prevent UI interruption
-      }
+          const res = await api.get('/users/me')
+          if (active && res.data) updateUser(res.data)
+        } catch {
+          // Silent catch to prevent UI interruption
+        }
     }
     refreshUser()
     return () => { active = false }

@@ -89,6 +89,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return res.id;
   },
 
+  removePendingThread: (pendingId: string) => {
+    set((state) => ({
+      threads: state.threads.filter((t) => t.id !== pendingId),
+    }))
+  },
+
   setPendingMapping: (pendingId: string, realId: string) => {
     set((state) => {
       // Remove optimistic pending thread entry if present to avoid duplicates

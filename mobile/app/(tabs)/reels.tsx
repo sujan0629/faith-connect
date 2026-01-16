@@ -1,4 +1,4 @@
-import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Pressable, Text } from 'react-native'
+import { View, Dimensions, ScrollView, NativeScrollEvent, NativeSyntheticEvent, Pressable } from 'react-native'
 import { useFeedStore } from '../../stores/feedStore'
 import { useAuthStore } from '../../stores/authStore'
 import { VideoView, useVideoPlayer, VideoPlayer } from 'expo-video'
@@ -14,9 +14,7 @@ import { useFeedAlgorithm } from '../../hooks/useFeedAlgorithm'
 import { ReelSkeleton } from '@/components/Skeletons/ReelSkeleton'
 import { postsApi } from '../../api/posts'
 import { useOfflineStore } from '../../stores/offlineStore'
-import { useNetworkSync } from '../../hooks/useNetworkSync'
-import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
-import Toast from 'react-native-toast-message'
+import { /* cacheFeedForOffline, getCachedFeedForOffline */ } from '../../lib/caching'
 import Ionicons from '@expo/vector-icons/Ionicons'
 
 const TAB_BAR_HEIGHT = 0;
@@ -28,8 +26,7 @@ export default function ReelsScreen() {
   const VISIBLE_HEIGHT = WINDOW_HEIGHT - TAB_BAR_HEIGHT
   const router = useDebouncedRouter()
   const { reelId } = useLocalSearchParams<{ reelId: string }>()
-  const { isOffline } = useNetworkSync()
-  const { isSyncing, syncError } = useOfflineStore()
+  // network/offline flags intentionally omitted when unused to avoid lint warnings
   // Initialize feed algorithm for tracking watch events
   const { trackView } = useFeedAlgorithm({
     autoRank: true,
@@ -62,6 +59,7 @@ export default function ReelsScreen() {
   const previousReelIdRef = useRef<string | undefined>(undefined)
 
   // Cleanup all video players on unmount
+   
   useEffect(() => {
     return () => {
       videoPlayers.current.forEach((player) => {
@@ -76,6 +74,7 @@ export default function ReelsScreen() {
     }
   }, [])
 
+   
   useLayoutEffect(() => {
     if (reelId && reelId !== previousReelIdRef.current && reels.length > 0) {
       previousReelIdRef.current = reelId
@@ -94,6 +93,7 @@ export default function ReelsScreen() {
     currentIndexRef.current = currentIndex
   }, [currentIndex])
 
+   
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     hasInitialized.current = false
     const contentOffsetY = event.nativeEvent.contentOffset.y
@@ -180,6 +180,7 @@ export default function ReelsScreen() {
   }, [])
 
   // Cleanup old players from map to prevent unbounded growth
+   
   useEffect(() => {
     // Only cleanup if reels array length changed significantly
     if (reels.length > 0) {

@@ -1,8 +1,8 @@
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams , Stack } from 'expo-router'
 import { useDebouncedRouter } from '../../hooks/useDebounce'
 import { ScrollView, Text, View, Pressable } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { Stack } from 'expo-router'
+
 import { TopBar } from '../../components/Headers/TopBar'
 import { useLeaderStore } from '../../stores/leaderStore'
 import { useFeedStore } from '../../stores/feedStore'

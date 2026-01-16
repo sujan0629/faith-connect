@@ -80,29 +80,29 @@ export default function ChatThread() {
         const raw = String(effectiveThreadId).replace(/^pending-/, '')
         const lastDash = raw.lastIndexOf('-')
         const peerId = lastDash !== -1 ? raw.slice(0, lastDash) : raw
-        try {
-          // Ensure we have the latest threads list to avoid creating duplicates
           try {
-            await useChatStore.getState().fetchThreads()
+            // Ensure we have the latest threads list to avoid creating duplicates
+            try {
+              await useChatStore.getState().fetchThreads()
+            } catch {
+              // ignore fetch errors here; we'll try createThread below
+            }
+
+            // Re-check for existing thread with same peerId
+            const existing = useChatStore.getState().threads.find((t) => t.peerId === peerId)
+            if (existing) {
+              useChatStore.getState().setPendingMapping(effectiveThreadId, existing.id)
+              await sendMessage(existing.id, msg)
+              return
+            }
+
+            // No existing thread found — create a new one
+            const realId = await useChatStore.getState().createThread(peerId)
+            useChatStore.getState().setPendingMapping(effectiveThreadId, realId)
+            await sendMessage(realId, msg)
           } catch {
-            // ignore fetch errors here; we'll try createThread below
+            Toast.show({ type: 'error', text1: 'Failed to send', text2: 'Could not create conversation' })
           }
-
-          // Re-check for existing thread with same peerId
-          const existing = useChatStore.getState().threads.find((t) => t.peerId === peerId)
-          if (existing) {
-            useChatStore.getState().setPendingMapping(effectiveThreadId, existing.id)
-            await sendMessage(existing.id, msg)
-            return
-          }
-
-          // No existing thread found — create a new one
-          const realId = await useChatStore.getState().createThread(peerId)
-          useChatStore.getState().setPendingMapping(effectiveThreadId, realId)
-          await sendMessage(realId, msg)
-        } catch (err) {
-          Toast.show({ type: 'error', text1: 'Failed to send', text2: 'Could not create conversation' })
-        }
         return
       }
 

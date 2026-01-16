@@ -2,11 +2,13 @@ import { useEffect, useRef } from 'react'
 import { AppState, AppStateStatus } from 'react-native'
 import OfflineSyncService from '../lib/offlineSync'
 import { useOfflineStore } from '../stores/offlineStore'
+import { api } from '../api/axios'
 
 export const useNetworkSync = () => {
   const { setOfflineStatus, isOffline, queue } = useOfflineStore()
   const appStateRef = useRef<AppStateStatus>('active')
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     // Check network status
@@ -49,10 +51,25 @@ export const useNetworkSync = () => {
         
         // Also check every 30 seconds while app is active
         syncTimeoutRef.current = setInterval(checkNetwork, 30000)
+        // Start health ping every 4 minutes while app is active
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current)
+        }
+        pingIntervalRef.current = setInterval(() => {
+          try {
+            // Lightweight ping to keep backend awake
+            api.get('/health', { timeout: 5000 }).catch(() => {})
+          } catch (e) {
+            // ignore
+          }
+        }, 4 * 60 * 1000)
       } else {
         // Clear interval when app goes to background
         if (syncTimeoutRef.current) {
           clearInterval(syncTimeoutRef.current)
+        }
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current)
         }
       }
     })
@@ -60,11 +77,22 @@ export const useNetworkSync = () => {
     // Initial check
     checkNetwork()
     syncTimeoutRef.current = setInterval(checkNetwork, 30000)
+    // Start health ping immediately and then every 4 minutes
+    pingIntervalRef.current = setInterval(() => {
+      try {
+        api.get('/health', { timeout: 5000 }).catch(() => {})
+      } catch (e) {
+        // ignore
+      }
+    }, 4 * 60 * 1000)
 
     return () => {
       subscription.remove()
       if (syncTimeoutRef.current) {
         clearInterval(syncTimeoutRef.current)
+      }
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current)
       }
     }
   }, [isOffline, queue.length])

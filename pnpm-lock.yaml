@@ -228,6 +228,9 @@ importers:
       '@react-native-picker/picker':
         specifier: 2.11.1
         version: 2.11.1(react-native@0.81.5)(react@19.1.0)
+      '@react-navigation/elements':
+        specifier: ^2.9.4
+        version: 2.9.4(@react-navigation/native@7.1.27)(react-native-safe-area-context@5.6.2)(react-native@0.81.5)(react@19.1.0)
       ajv:
         specifier: ^6.12.6
         version: 6.12.6
@@ -4834,16 +4837,16 @@ packages:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@react-native-community/cli@18.0.1)(@types/react@19.1.17)(react@19.1.0)
 
-  /@react-navigation/bottom-tabs@7.9.0(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native-screens@4.16.0)(react-native@0.81.5)(react@19.1.0):
-    resolution: {integrity: sha512-024FWdHp3ZsE5rP8tmGI4vh+1z3wg8u8E9Frep8eeGoYo1h9rQhvgofQDGxknmrKsb7t8o8Dim+IZSvl57cPFQ==}
+  /@react-navigation/bottom-tabs@7.9.1(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native-screens@4.16.0)(react-native@0.81.5)(react@19.1.0):
+    resolution: {integrity: sha512-1MHn1b5tWFa8t8LXUvaNtlg5WGVXcNTsiV00ygQDBFDusMcu0ZPOU1exqELZwHf6kDntmTQE96/NRM+Cd2QR+A==}
     peerDependencies:
-      '@react-navigation/native': ^7.1.26
+      '@react-navigation/native': ^7.1.27
       react: '>= 18.2.0'
       react-native: '*'
       react-native-safe-area-context: '>= 4.0.0'
       react-native-screens: '>= 4.0.0'
     dependencies:
-      '@react-navigation/elements': 2.9.3(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native@0.81.5)(react@19.1.0)
+      '@react-navigation/elements': 2.9.4(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native@0.81.5)(react@19.1.0)
       '@react-navigation/native': 7.1.26(react-native@0.81.5)(react@19.1.0)
       color: 4.2.3
       react: 19.1.0
@@ -4869,11 +4872,11 @@ packages:
       use-latest-callback: 0.2.6(react@19.1.0)
       use-sync-external-store: 1.6.0(react@19.1.0)
 
-  /@react-navigation/elements@2.9.3(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native@0.81.5)(react@19.1.0):
-    resolution: {integrity: sha512-3+eyvWiVPIEf6tN9UdduhOEHcTuNe3R5WovgiVkfH9+jApHMTZDc2loePTpY/i2HDJhObhhChpJzO6BVjrpdYQ==}
+  /@react-navigation/elements@2.9.4(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native@0.81.5)(react@19.1.0):
+    resolution: {integrity: sha512-TMFh+QzwesEuSaKpvZk4BFC5105t5gJs9eq+jG7jtfdlMKyrcFwheu2/dy1zfrW4WYbVcoMxhzFqCU4mKwI4fw==}
     peerDependencies:
       '@react-native-masked-view/masked-view': '>= 0.2.0'
-      '@react-navigation/native': ^7.1.26
+      '@react-navigation/native': ^7.1.27
       react: '>= 18.2.0'
       react-native: '*'
       react-native-safe-area-context: '>= 4.0.0'
@@ -4889,6 +4892,27 @@ packages:
       use-latest-callback: 0.2.6(react@19.1.0)
       use-sync-external-store: 1.6.0(react@19.1.0)
 
+  /@react-navigation/elements@2.9.4(@react-navigation/native@7.1.27)(react-native-safe-area-context@5.6.2)(react-native@0.81.5)(react@19.1.0):
+    resolution: {integrity: sha512-TMFh+QzwesEuSaKpvZk4BFC5105t5gJs9eq+jG7jtfdlMKyrcFwheu2/dy1zfrW4WYbVcoMxhzFqCU4mKwI4fw==}
+    peerDependencies:
+      '@react-native-masked-view/masked-view': '>= 0.2.0'
+      '@react-navigation/native': ^7.1.27
+      react: '>= 18.2.0'
+      react-native: '*'
+      react-native-safe-area-context: '>= 4.0.0'
+    peerDependenciesMeta:
+      '@react-native-masked-view/masked-view':
+        optional: true
+    dependencies:
+      '@react-navigation/native': 7.1.27(react-native@0.81.5)(react@19.1.0)
+      color: 4.2.3
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.28.5)(@react-native-community/cli@18.0.1)(@types/react@19.1.17)(react@19.1.0)
+      react-native-safe-area-context: 5.6.2(react-native@0.81.5)(react@19.1.0)
+      use-latest-callback: 0.2.6(react@19.1.0)
+      use-sync-external-store: 1.6.0(react@19.1.0)
+    dev: false
+
   /@react-navigation/native-stack@7.9.0(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native-screens@4.16.0)(react-native@0.81.5)(react@19.1.0):
     resolution: {integrity: sha512-C/mNPhI0Pnerl7C2cB+6fAkdgSmfKECMERrbyfjx3P6JmEuTC54o+GV1c62FUmlRaRUassVHbtw4EeaY2uLh0g==}
     peerDependencies:
@@ -4898,7 +4922,7 @@ packages:
       react-native-safe-area-context: '>= 4.0.0'
       react-native-screens: '>= 4.0.0'
     dependencies:
-      '@react-navigation/elements': 2.9.3(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native@0.81.5)(react@19.1.0)
+      '@react-navigation/elements': 2.9.4(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native@0.81.5)(react@19.1.0)
       '@react-navigation/native': 7.1.26(react-native@0.81.5)(react@19.1.0)
       color: 4.2.3
       react: 19.1.0
@@ -4923,6 +4947,21 @@ packages:
       react: 19.1.0
       react-native: 0.81.5(@babel/core@7.28.5)(@react-native-community/cli@18.0.1)(@types/react@19.1.17)(react@19.1.0)
       use-latest-callback: 0.2.6(react@19.1.0)
+
+  /@react-navigation/native@7.1.27(react-native@0.81.5)(react@19.1.0):
+    resolution: {integrity: sha512-kW7LGP/RrisktpGyizTKw6HwSeQJdXnAN9L8GyQJcJAlgL9YtfEg6yEyD5n9RWH90CL8G0cRyUhphKIAFf4lVw==}
+    peerDependencies:
+      react: '>= 18.2.0'
+      react-native: '*'
+    dependencies:
+      '@react-navigation/core': 7.13.7(react@19.1.0)
+      escape-string-regexp: 4.0.0
+      fast-deep-equal: 3.1.3
+      nanoid: 3.3.11
+      react: 19.1.0
+      react-native: 0.81.5(@babel/core@7.28.5)(@react-native-community/cli@18.0.1)(@types/react@19.1.17)(react@19.1.0)
+      use-latest-callback: 0.2.6(react@19.1.0)
+    dev: false
 
   /@react-navigation/routers@7.5.3:
     resolution: {integrity: sha512-1tJHg4KKRJuQ1/EvJxatrMef3NZXEPzwUIUZ3n1yJ2t7Q97siwRtbynRpQG9/69ebbtiZ8W3ScOZF/OmhvM4Rg==}
@@ -8752,7 +8791,7 @@ packages:
       '@expo/schema-utils': 0.1.8
       '@radix-ui/react-slot': 1.2.0(@types/react@19.1.17)(react@19.1.0)
       '@radix-ui/react-tabs': 1.1.13(@types/react@19.1.17)(react-dom@19.1.0)(react@19.1.0)
-      '@react-navigation/bottom-tabs': 7.9.0(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native-screens@4.16.0)(react-native@0.81.5)(react@19.1.0)
+      '@react-navigation/bottom-tabs': 7.9.1(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native-screens@4.16.0)(react-native@0.81.5)(react@19.1.0)
       '@react-navigation/native': 7.1.26(react-native@0.81.5)(react@19.1.0)
       '@react-navigation/native-stack': 7.9.0(@react-navigation/native@7.1.26)(react-native-safe-area-context@5.6.2)(react-native-screens@4.16.0)(react-native@0.81.5)(react@19.1.0)
       client-only: 0.0.1

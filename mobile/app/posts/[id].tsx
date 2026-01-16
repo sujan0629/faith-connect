@@ -64,6 +64,7 @@ export default function PostDetailScreen() {
     initializeFollowStore()
   }, [setFollowingIds])
   
+   
   useEffect(() => {
     const loadPost = async () => {
       try {

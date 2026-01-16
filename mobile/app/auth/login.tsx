@@ -25,11 +25,10 @@ export default function Login() {
   const { isAuthenticated, user, rolePreference } = useAuthStore()
   const [email, setEmail] = useState("");
   const [magicLinkSending, setMagicLinkSending] = useState(false);
-  const [magicLinkError, setMagicLinkError] = useState<string | null>(null);
-  
   const { errors, validateField } = useZodValidation(CheckEmailSchema);
 
   // Redirect authenticated users away from login
+   
   React.useEffect(() => {
     if (isAuthenticated && user?.onboardingCompleted) {
       router.replace('/(tabs)/home')
@@ -56,7 +55,7 @@ export default function Login() {
       return;
     }
 
-    setMagicLinkError(null);
+    // clear any previous UI errors via toast
     setMagicLinkSending(true);
 
     try {
@@ -110,7 +109,7 @@ export default function Login() {
         );
       }
     } catch (error: any) {
-      setMagicLinkError(error?.message || "Something went wrong. Please try again.");
+      Toast.show({ type: 'error', text1: 'Magic link failed', text2: error?.message || 'Something went wrong. Please try again.' })
     } finally {
       setMagicLinkSending(false);
     }

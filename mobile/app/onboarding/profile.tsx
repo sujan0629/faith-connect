@@ -65,6 +65,7 @@ export default function FaithConnectOnboarding() {
   const [audiencePrefs, setAudiencePrefs] = useState<string[]>([]);
 
   // If already onboarded, block entry
+   
   React.useEffect(() => {
     if (isAuthenticated && user?.onboardingCompleted) {
       router.replace('/(tabs)/home')

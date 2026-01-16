@@ -14,6 +14,7 @@ import { useNetworkSync } from '../../hooks/useNetworkSync'
 import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
 import { useOfflineStore } from '../../stores/offlineStore';
 import { Ionicons } from '@expo/vector-icons'
+import { useHideTabOnScroll } from '../../hooks/useHideTabOnScroll'
 
 export default function MessagesScreen() {
   const router = useDebouncedRouter()
@@ -27,6 +28,7 @@ export default function MessagesScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const { isOffline } = useNetworkSync()
   const { isSyncing, syncError } = useOfflineStore()
+  const onScroll = useHideTabOnScroll()
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -67,6 +69,7 @@ export default function MessagesScreen() {
       return new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
     })
 
+   
   useEffect(() => {
     const loadThreads = async () => {
       try {
@@ -102,7 +105,7 @@ export default function MessagesScreen() {
         </View>
       )}
       <MessagesHeader filters={filters} onFiltersChange={setFilters} />
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} onScroll={onScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
         {/* Search Bar */}
         <View className="px-4 pt-2">
           <MessageSearchBar value={search} onChange={setSearch} />

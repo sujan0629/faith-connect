@@ -1,4 +1,4 @@
-import { View, Text, Pressable, Image } from 'react-native'
+import { View, Text, Image } from 'react-native'
 import { DebouncedPressable } from '../DebouncedPressable'
 import { SolidButton } from '../Buttons/SolidButtonTwo'
 import { useFollowStore } from '../../stores/followStore'

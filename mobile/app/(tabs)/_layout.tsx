@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useCreatePostStore } from '../../stores/createPostStore'
 import { CreatePostModal } from '../../components/Feed/CreatePostModal'
 import { useFeedStore } from '../../stores/feedStore'
+import { useUiStore } from '../../stores/uiStore'
 
 type IconName = string | { active: string; inactive: string }
 
@@ -46,9 +47,13 @@ export default function TabsLayout() {
   const isLeader = user?.role === 'leader'
   const { isModalOpen, openModal, closeModal } = useCreatePostStore()
   const addPost = useFeedStore((s) => s.addPost)
+  const showTabBar = useUiStore((s) => s.showTabBar)
 
   // Reduced height for a compacter look
   const BAR_HEIGHT = 50;
+
+  // When hidden, translate the tab bar down by its height (+ extra bottom offset on iOS).
+  const hiddenTranslateY = Platform.select({ ios: BAR_HEIGHT + 24, default: BAR_HEIGHT }) as number
 
   return (
     <>
@@ -71,10 +76,14 @@ export default function TabsLayout() {
               shadowOpacity: 0.2,
               shadowRadius: 8,
               elevation: 5,
+              transform: [{ translateY: showTabBar ? 0 : hiddenTranslateY }],
+              opacity: showTabBar ? 1 : 0,
             },
             default: {
               backgroundColor: isReelsScreen ? '#111111' : '#222222',
               height: 60,
+              transform: [{ translateY: showTabBar ? 0 : hiddenTranslateY }],
+              opacity: showTabBar ? 1 : 0,
             }
           }),
           tabBarItemStyle: {
@@ -101,7 +110,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="create"
           options={{ 
-            tabBarIcon: ({ focused }) => <TabIcon name={{ active: 'add-circle', inactive: 'add-circle-outline' }} focused={focused} size={24} />,
+            tabBarIcon: ({ focused }) => <TabIcon name={{ active: 'add-circle', inactive: 'add-circle-outline' }} focused={focused} size={28} />,
             tabBarItemStyle: [
               { justifyContent: 'center', alignItems: 'center', height: BAR_HEIGHT },
               !isLeader && { display: 'none' }

@@ -27,7 +27,7 @@ export const PostCard = ({ item, onLike, onSave, isVisible = false, isProfileVie
   const [showReportModal, setShowReportModal] = useState(false)
   const [showBlockModal, setShowBlockModal] = useState(false)
   const [showActionMenu, setShowActionMenu] = useState(false)
-  const [imageLoading, setImageLoading] = useState(true)
+  
   const router = useRouter()
   const { isLiked, isSaved, isReposted, toggleLike, toggleSave, toggleRepost } = useEngagementStore()
 
@@ -44,12 +44,15 @@ export const PostCard = ({ item, onLike, onSave, isVisible = false, isProfileVie
   // Cleanup player on unmount
   useEffect(() => {
     return () => {
-      try {
-        player.pause()
-        player.release?.()
-      } catch {
-        // Player might already be released
-      }
+      // Defer heavy cleanup off the main synchronous unmount path so navigation isn't blocked.
+      setTimeout(() => {
+        try {
+          player.pause()
+          player.release?.()
+        } catch {
+          // Player might already be released
+        }
+      }, 0)
     }
   }, [player])
 
@@ -68,8 +71,6 @@ export const PostCard = ({ item, onLike, onSave, isVisible = false, isProfileVie
                 source={{ uri: item.media }}
                 className="h-full w-full"
                 resizeMode="cover"
-                onLoadEnd={() => setImageLoading(false)}
-                onError={() => setImageLoading(false)}
               />
             </View>
           ) : null}
@@ -170,8 +171,6 @@ export const PostCard = ({ item, onLike, onSave, isVisible = false, isProfileVie
             source={{ uri: item.media }}
             className="h-full w-full"
             resizeMode="cover"
-            onLoadEnd={() => setImageLoading(false)}
-            onError={() => setImageLoading(false)}
           />
         </View>
       ) : null}

@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNetworkSync } from '../../hooks/useNetworkSync';
 import { useOfflineStore } from '../../stores/offlineStore';
 import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching';
+import { useHideTabOnScroll } from '../../hooks/useHideTabOnScroll';
 
 export default function LeadersScreen() {
   const router = useDebouncedRouter();
@@ -37,6 +38,7 @@ export default function LeadersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { isOffline } = useNetworkSync();
   const { isSyncing, syncError } = useOfflineStore();
+  const onScroll = useHideTabOnScroll();
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -67,6 +69,7 @@ export default function LeadersScreen() {
   };
 
   // Fetch leaders on mount and when filters change
+   
   useEffect(() => {
     if (!isLeader) {
       const loadLeaders = async () => {
@@ -93,6 +96,7 @@ export default function LeadersScreen() {
   }, [filters.faith, search, isLeader]);
 
   // Fetch followers for leaders
+   
   useEffect(() => {
     if (isLeader && user?.id) {
       const fetchFollowers = async () => {
@@ -159,7 +163,7 @@ export default function LeadersScreen() {
           onFiltersChange={setFilters}
           isLeader={true}
         />
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} onScroll={onScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
           <View className="px-4 pt-2">
             <View className="flex-row items-center gap-2 mb-3">
               <LeaderSearchBar value={search} onChange={setSearch} />

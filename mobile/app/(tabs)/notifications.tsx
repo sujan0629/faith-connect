@@ -11,6 +11,7 @@ import { NotificationLikeCard } from '../../components/Notifications/Notificatio
 import { NotificationEmptyState } from '../../components/Notifications/NotificationEmptyState'
 import { FilterState } from '../../components/FilterDropdown'
 import { useNetworkSync } from '../../hooks/useNetworkSync'
+import { useHideTabOnScroll } from '../../hooks/useHideTabOnScroll'
 import { cacheFeedForOffline, getCachedFeedForOffline } from '../../lib/caching'
 import Toast from 'react-native-toast-message'
 import { Ionicons } from '@expo/vector-icons'
@@ -32,8 +33,10 @@ export default function NotificationsScreen() {
   })
   const [refreshing, setRefreshing] = useState(false)
   const { isOffline } = useNetworkSync()
+  const onScroll = useHideTabOnScroll()
 
   // Fetch notifications on mount
+   
   useEffect(() => {
     const loadNotifications = async () => {
       try {
@@ -173,7 +176,7 @@ export default function NotificationsScreen() {
         </View>
       )}
       <NotificationsHeader segment={activeTab} onSegmentChange={setActiveTab} filters={filters} onFiltersChange={setFilters} />
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 32 }} onScroll={onScroll} scrollEventThrottle={16} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
         {/* Search Bar */}
         <View className="px-4">
           <NotificationSearchBar value={search} onChange={setSearch} />

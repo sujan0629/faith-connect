@@ -15,6 +15,7 @@ export default function Landing() {
     const { isAuthenticated, user, isHydrated, hydrate } = useAuthStore()
     const insets = useSafeAreaInsets()
 
+     
     useEffect(() => {
         const init = async () => {
             await hydrate()
@@ -47,6 +48,7 @@ export default function Landing() {
         init()
     }, [])
 
+     
     useEffect(() => {
         if (params.logout) return; // Skip redirect if just logged out
         

@@ -17,6 +17,7 @@ export default function SettingsScreen() {
   const [localSettings, setLocalSettings] = useState<UserSettings | null>(null)
   const { status, checkForUpdate, applyOtaUpdate, error } = useAppUpdate()
 
+   
   useEffect(() => {
     fetchSettings()
   }, [])

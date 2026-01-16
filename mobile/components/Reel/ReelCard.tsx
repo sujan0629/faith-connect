@@ -46,6 +46,7 @@ const ReelCard = ({ item, onLike, onSave, isVisible = true, isScreenFocused = tr
   })
 
   // Handle mute/unmute globally (but not in profile view)
+   
   useEffect(() => {
     if (!isProfileView) {
       player.muted = globalMuted
