@@ -51,40 +51,46 @@ export const useNetworkSync = () => {
         
         // Also check every 30 seconds while app is active
         syncTimeoutRef.current = setInterval(checkNetwork, 30000)
-        // Start health ping every 4 minutes while app is active
+        // Start health ping every 2 minutes while app is active (more aggressive to prevent cold start)
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current)
         }
         pingIntervalRef.current = setInterval(() => {
           try {
-            // Lightweight ping to keep backend awake
+            // Lightweight ping to keep backend awake on Render free tier (which sleeps after 15 mins)
             api.get('/health', { timeout: 5000 }).catch(() => {})
           } catch (e) {
             // ignore
           }
-        }, 4 * 60 * 1000)
+        }, 2 * 60 * 1000) // 2 minutes instead of 4
       } else {
-        // Clear interval when app goes to background
-        if (syncTimeoutRef.current) {
-          clearInterval(syncTimeoutRef.current)
-        }
+        // IMPORTANT: Continue pinging even in background to prevent cold start
+        // Render free tier sleeps after 15 mins - we need constant heartbeat
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current)
         }
+        pingIntervalRef.current = setInterval(() => {
+          try {
+            // Background health ping - critical for Render free tier
+            api.get('/health', { timeout: 5000 }).catch(() => {})
+          } catch (e) {
+            // ignore
+          }
+        }, 2 * 60 * 1000) // 2 minutes - keep the app warm even in background
       }
     })
 
     // Initial check
     checkNetwork()
     syncTimeoutRef.current = setInterval(checkNetwork, 30000)
-    // Start health ping immediately and then every 4 minutes
+    // Start health ping immediately and then every 2 minutes (prevents Render cold start)
     pingIntervalRef.current = setInterval(() => {
       try {
         api.get('/health', { timeout: 5000 }).catch(() => {})
       } catch (e) {
         // ignore
       }
-    }, 4 * 60 * 1000)
+    }, 2 * 60 * 1000)
 
     return () => {
       subscription.remove()

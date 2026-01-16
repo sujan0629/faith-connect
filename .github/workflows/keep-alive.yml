@@ -1,0 +1,19 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render free tier cold start
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        run: |
+          curl -f https://faith-connect-4z69.onrender.com/api/health || echo "Health check failed, will retry"
+          sleep 2
+          curl -f https://faith-connect-4z69.onrender.com/api/health || echo "Retry failed"
+        timeout-minutes: 1
+        continue-on-error: true
