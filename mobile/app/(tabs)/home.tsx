@@ -143,8 +143,8 @@ export default function HomeScreen() {
         setIsLoading(true)
         const { loadQueue } = useOfflineStore.getState()
         
-        // Load offline queue on startup
-        await loadQueue()
+        // Load offline queue on startup (in parallel)
+        loadQueue().catch(e => console.warn('[Feed] Failed to load queue:', e))
 
         try {
           // Load explore feed first (critical for initial render)
@@ -154,9 +154,6 @@ export default function HomeScreen() {
           console.log(`[Feed] Explore feed loaded in ${exploreTime - startTime}ms`)
           
           setFeed(feedPosts)
-          
-          // Cache explore feed
-          await cacheFeedForOffline('explore_posts', feedPosts)
           
           // Cache author faiths for scoring
           feedPosts.forEach((post) => {
@@ -174,12 +171,15 @@ export default function HomeScreen() {
           setSaves(savedIds)
           setReposts(repostedIds)
 
-          // Perform ranking on explore feed (critical)
+          // Perform ranking on explore feed (quick, non-blocking)
           if (user?.id) {
             performRanking('explore')
           }
           
           console.log(`[Feed] Initial render ready in ${Date.now() - startTime}ms - loading following/reels in background`)
+          
+          // Cache explore feed in the background (don't await)
+          cacheFeedForOffline('explore_posts', feedPosts).catch(e => console.warn('[Feed] Cache failed:', e))
           
           // Load following and reels in background (not blocking)
           loadFollowingAndReels()

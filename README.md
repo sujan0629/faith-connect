@@ -127,10 +127,9 @@ import type { Role, UserProfile } from '@faithconnect/shared';
 | `pnpm test` | Run all tests |
 ## Cold Start Prevention (Render Free Tier)
 
-The backend is hosted on Render's free tier, which puts services to sleep after 15 minutes of inactivity. We've implemented a multi-layered approach to keep the backend warm:
+The backend is hosted on Render's free tier, which puts services to sleep after 15 minutes of inactivity. We've implemented a simple but effective approach to keep the backend warm:
 
-1. **Mobile App Keep-Alive**: Pings `/api/health` every 2 minutes (even when app is backgrounded)
-2. **GitHub Actions Monitor**: Automatically pings backend every 10 minutes (24/7)
-3. **Render Health Endpoint**: Lightweight `/api/health` endpoint for monitoring
+1. **Mobile App Keep-Alive**: Pings `/api/info` every 5 minutes (runs continuously in background)
+2. **Render Health Endpoint**: Lightweight `/api/info` endpoint for health checks
 
-👉 **See [COLD_START_FIX.md](./COLD_START_FIX.md) for detailed documentation and troubleshooting**
+This prevents the 40-60 second cold start delays and keeps the backend responsive for all users.

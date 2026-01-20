@@ -24,6 +24,7 @@ import notificationService from "../lib/notificationService";
 import { verifyFirebaseSetup } from "../lib/firebaseSetup";
 import { useAuthStore } from "../stores/authStore";
 import { api } from "../api/axios";
+import backendKeepAlive from "../lib/backendKeepAlive";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,6 +46,15 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
+  // Start backend keep-alive service on app launch
+  useEffect(() => {
+    backendKeepAlive.startBackendKeepAlive()
+
+    return () => {
+      backendKeepAlive.stopBackendKeepAlive()
+    }
+  }, [])
+
   useEffect(() => {
     if (Platform.OS === "android") {
       NavigationBar.setBackgroundColorAsync("#FFFFFF").catch(() => {});
@@ -63,47 +73,47 @@ export default function RootLayout() {
   }, []);
 
   // Initialize push notifications when user is authenticated
+  // Deferred to avoid blocking initial render
   useEffect(() => {
-    const initializePushNotifications = async () => {
-      if (user && user.id) {
-        try {
-          // Register for push notifications
-          await notificationService.registerForPushNotificationsAsync(
-            user.id,
-            api,
-          );
+    if (!user?.id) return;
+    
+    // Defer initialization to after app has fully rendered
+    const timer = setTimeout(async () => {
+      try {
+        // Register for push notifications
+        await notificationService.registerForPushNotificationsAsync(
+          user.id,
+          api,
+        );
 
-          // Setup notification listeners
-          notificationService.setupNotificationListeners(
-            (notification) => {
-              // Handle notification when app is open
-              console.log("Notification received:", notification);
-              Toast.show({
-                type: "info",
-                text1: notification.request.content.title || "New Notification",
-                text2: notification.request.content.body || "New message",
-              });
-            },
-            (response) => {
-              // Handle notification tap
-              const data = response.notification.request.content.data;
-              if (data && data.type) {
-                console.log("Navigating from notification:", data);
-                // Handle navigation based on notification type
-                // This can be expanded based on your app's structure
-              }
-            },
-          );
-        } catch (error) {
-          console.error("Error initializing push notifications:", error);
-        }
+        // Setup notification listeners
+        notificationService.setupNotificationListeners(
+          (notification) => {
+            // Handle notification when app is open
+            console.log("Notification received:", notification);
+            Toast.show({
+              type: "info",
+              text1: notification.request.content.title || "New Notification",
+              text2: notification.request.content.body || "New message",
+            });
+          },
+          (response) => {
+            // Handle notification tap
+            const data = response.notification.request.content.data;
+            if (data && data.type) {
+              console.log("Navigating from notification:", data);
+              // Handle navigation based on notification type
+            }
+          },
+        );
+      } catch (error) {
+        console.error("Error initializing push notifications:", error);
       }
-    };
-
-    initializePushNotifications();
+    }, 2000); // Defer by 2 seconds to not block initial render
 
     // Cleanup
     return () => {
+      clearTimeout(timer);
       notificationService.removeNotificationListeners();
     };
   }, [user?.id]);

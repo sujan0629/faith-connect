@@ -7,7 +7,7 @@ import { MessageSearchBar } from '../../components/Messages/MessageSearchBar'
 import { MessageThreadCard } from '../../components/Messages/MessageThreadCard'
 import { MessageEmptyState } from '../../components/Messages/MessageEmptyState'
 import { MessagesSkeleton } from '../../components/Skeletons/MessageSkeleton'
-import { useChatStore } from '../../stores/chatStore'
+import { useChatStore, initializeSocketForMessaging } from '../../stores/chatStore'
 import Toast from 'react-native-toast-message'
 import { FilterState } from '../../components/FilterDropdown'
 import { useNetworkSync } from '../../hooks/useNetworkSync'
@@ -29,6 +29,11 @@ export default function MessagesScreen() {
   const { isOffline } = useNetworkSync()
   const { isSyncing, syncError } = useOfflineStore()
   const onScroll = useHideTabOnScroll()
+
+  // Initialize socket connection when user first accesses messages
+  useEffect(() => {
+    initializeSocketForMessaging()
+  }, [])
 
   const handleRefresh = async () => {
     setRefreshing(true)

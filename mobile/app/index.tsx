@@ -20,30 +20,19 @@ export default function Landing() {
         const init = async () => {
             await hydrate()
             
-            // Request notification permissions
-            try {
-                const notificationPermission = await Notifications.requestPermissionsAsync()
-                if (notificationPermission.status !== 'granted') {
-                    console.log('Notification permission denied')
+            // Defer all permission requests to background
+            // This prevents blocking the UI during cold start
+            setImmediate(async () => {
+                try {
+                    await Promise.all([
+                        Notifications.requestPermissionsAsync(),
+                        ImagePicker.requestCameraPermissionsAsync(),
+                        ImagePicker.requestMediaLibraryPermissionsAsync(),
+                    ])
+                } catch (error) {
+                    console.error('[App] Failed to request permissions:', error)
                 }
-            } catch (error) {
-                console.error('Failed to request notification permission:', error)
-            }
-            
-            // Request media permissions on app launch
-            try {
-                const cameraPermission = await ImagePicker.requestCameraPermissionsAsync()
-                if (cameraPermission.status !== 'granted') {
-                    console.log('Camera permission denied')
-                }
-                
-                const libraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync()
-                if (libraryPermission.status !== 'granted') {
-                    console.log('Photo library permission denied')
-                }
-            } catch (error) {
-                console.error('Failed to request permissions:', error)
-            }
+            })
         }
         init()
     }, [])

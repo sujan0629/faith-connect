@@ -178,9 +178,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 }));
 
-// Initialize socket when auth token becomes available and wire message events
-// Subscribe to auth token changes and manage socket lifecycle
-(() => {
+// Initialize socket LAZILY when first needed (when user accesses messages)
+// This prevents blocking the initial app startup
+let socketInitialized = false
+
+export const initializeSocketForMessaging = () => {
+  if (socketInitialized) return
+  socketInitialized = true
+
   let prevToken: string | undefined = useAuthStore.getState().accessToken
   useAuthStore.subscribe((state) => {
     const token = state.accessToken
@@ -251,4 +256,4 @@ export const useChatStore = create<ChatState>((set, get) => ({
       } catch {}
     }
   })
-})()
+}
