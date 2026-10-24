@@ -1,135 +1,36 @@
-# FaithConnect Monorepo
+# FaithConnect
 
-A modern full-stack application built with **pnpm workspaces** and **Turborepo** for efficient monorepo management.
+A mobile-first community application connecting people and faith leaders, with a React Native client, a NestJS API, and shared TypeScript contracts in a pnpm/Turborepo workspace.
 
-## Structure
+<img src="mobile/assets/design/home.jpeg" alt="FaithConnect mobile home interface" width="280" />
 
-```
-faithConnect/
-├── backend/          # NestJS API
-├── mobile/           # Expo React Native app
-├── shared/           # Shared TypeScript types & DTOs
-├── turbo.json        # Turborepo configuration
-└── pnpm-workspace.yaml  # pnpm workspace config
-```
+## Explore the system
 
-## Prerequisites
+| Package | Responsibilities |
+| --- | --- |
+| [mobile](mobile) | Expo Router screens, feed/video interfaces, profiles, messages, and client state |
+| [backend](backend) | NestJS API, MongoDB models, authentication, upload and communication integration code |
+| [shared](shared) | DTOs, validation, constants, and shared TypeScript definitions |
 
-- **Node.js** >= 18.0.0
-- **pnpm** >= 8.0.0
+See the [backend guide](backend/README.md) for endpoint details and the [mobile guide](mobile/README.md) for interface structure. Features require their corresponding backend and provider configuration.
 
-Install pnpm globally:
-```bash
-npm install -g pnpm@8.15.0
-```
+## Run locally
 
-## Setup
-
-### Install Dependencies
+Use the package manager declared by the root package.json (pnpm 8.15.0). Install a Node version compatible with the NestJS 11 backend and the Expo app, then:
 
 ```bash
-# Install all dependencies (root + all workspaces)
 pnpm install
-```
-
-That's it! pnpm will automatically install dependencies for all workspaces and link them together.
-
-### Running the Apps
-
-**All services with Turbo TUI**:
-```bash
-pnpm dev
-```
-This starts backend, mobile, and shared in watch mode with a beautiful terminal UI.
-
-**Individual services**:
-```bash
-# Backend only
-pnpm dev:backend
-
-# Mobile only
-pnpm dev:mobile
-
-# Shared (watch mode)
-pnpm dev:shared
-```
-
-**Build**:
-```bash
-# Build all packages
-pnpm build
-
-# Build shared only
 pnpm build:shared
 ```
 
-## Shared Package
+Copy `backend/.env.example` to an untracked `backend/.env` and configure MongoDB, distinct JWT secrets, and any enabled email/upload services. Point the mobile API client at a reachable backend address.
 
-The `shared` folder contains TypeScript definitions shared between backend and mobile:
-
-- **Types**: User types, roles, auth responses
-- **DTOs**: Request/response interfaces for API endpoints
-- **Constants**: Shared enums and constants
-
-### Using Shared Types
-
-**Backend (NestJS)**:
-```typescript
-import type { Role, UserProfile } from '@faithconnect/shared';
+```bash
+pnpm dev
 ```
 
-**Mobile (React Native)**:
-```typescript
-import type { Role, UserProfile } from '@faithconnect/shared';
-```
+Individual entry points are `pnpm dev:backend`, `pnpm dev:mobile`, and `pnpm dev:shared`. Other root scripts include `pnpm build`, `pnpm lint`, and `pnpm test`.
 
-## Benefits
+## Operational boundaries
 
-1. **Type Safety**: Shared types ensure frontend and backend stay in sync
-2. **Single Source of Truth**: DTOs defined once, used everywhere
-3. **Refactoring**: Changes to types propagate automatically
-4. **Less Duplication**: No need to manually keep types in sync
-5. **Fast Builds**: Turborepo caches build outputs and runs tasks in parallel
-6. **Efficient Dependencies**: pnpm creates a single content-addressable store
-
-## Development Workflow
-
-1. Update types in `shared/src/`
-2. Turborepo automatically rebuilds dependents
-3. Backend and mobile hot-reload with updated types
-4. TypeScript catches any breaking changes immediately
-
-## Turborepo Features
-
-- **Parallel Execution**: Runs tasks across workspaces simultaneously
-- **Smart Caching**: Never rebuilds the same thing twice
-- **Dependency Graph**: Understands workspace relationships
-- **TUI Mode**: Beautiful terminal interface showing all running processes
-
-## pnpm Features
-
-- **Fast**: Up to 2x faster than npm
-- **Efficient**: Saves disk space with content-addressable storage
-- **Strict**: Better dependency management and no phantom dependencies
-- **Workspace Protocol**: Native monorepo support
-
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `pnpm install` | Install all dependencies |
-| `pnpm dev` | Run all services with Turbo TUI |
-| `pnpm build` | Build all packages |
-| `pnpm dev:backend` | Run backend only |
-| `pnpm dev:mobile` | Run mobile only |
-| `pnpm dev:shared` | Watch shared types |
-| `pnpm lint` | Lint all packages |
-| `pnpm test` | Run all tests |
-## Cold Start Prevention (Render Free Tier)
-
-The backend is hosted on Render's free tier, which puts services to sleep after 15 minutes of inactivity. We've implemented a simple but effective approach to keep the backend warm:
-
-1. **Mobile App Keep-Alive**: Pings `/api/info` every 5 minutes (runs continuously in background)
-2. **Render Health Endpoint**: Lightweight `/api/info` endpoint for health checks
-
-This prevents the 40-60 second cold start delays and keeps the backend responsive for all users.
+Client keep-alive pings do not guarantee background execution or an always-on server. Provider availability, token configuration, uploads, and notification delivery need testing in the environment you deploy. Replace development secret defaults before using a shared instance; this README does not assert a security audit or production availability guarantee.
